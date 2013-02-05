@@ -1,0 +1,227 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Text.RegularExpressions;
+
+namespace Java2PHP
+{
+    internal class Program
+    {
+        private enum parseState
+        {
+            Class,
+            Function,
+            Global,
+        }
+
+        private static void Main(string[] args)
+        {
+            string startingPath = @"C:\dd\git\azure-sdk-qa-pr\java\microsoft-azure-api-external-tests\src\test\java\ext\microsoft\windowsazure\services\queue";
+            string fileName = "IntegrationTestBase";
+            string[] javaLines = File.ReadAllLines(Path.Combine(startingPath, fileName + ".java"));
+
+            string[] phpLines = convertLines(javaLines);
+            string phpPath = @"C:\wamp\www\php\PhpProject3\queue";
+            File.WriteAllLines(Path.Combine(phpPath, fileName + ".php"), phpLines);
+
+            Console.ReadLine();
+        }
+
+        private static string[] convertLines(string[] lines)
+        {
+            List<string> fixedLines = new List<string>();
+            List<string> curLines = new List<string>();
+            foreach (string line in lines)
+            {
+                if (line.Trim().StartsWith("@")) { continue; }
+                curLines.Add(line);
+                if (line.Trim().Length == 0  // || line.Trim().StartsWith("@")
+                    || line.EndsWith(";") || line.EndsWith("}") || line.EndsWith("{")
+                    || line.Contains("//"))
+                {
+                    for (int i = 1; i < curLines.Count; i++)
+                    {
+                        curLines[i] = curLines[i].Trim();
+                    }
+                    fixedLines.Add(string.Join(" ", curLines.ToArray()));
+                    curLines.Clear();
+                }
+            }
+
+            Stack<Frame> variables = new Stack<Frame>();
+            Stack<parseState> states = new Stack<parseState>();
+            states.Push(parseState.Global);
+
+            int runningDepth = 0;
+            List<string> ret = new List<string>();
+            ret.Add("<?php");
+            ret.Add("");
+
+            foreach (string line in fixedLines)
+            {
+                parseState oldState = states.Peek();
+
+                runningDepth += line.Count(p => p == '{') - line.Count(p => p == '}');
+                while (runningDepth > variables.Count)
+                {
+                    variables.Push(new Frame());
+                    states.Push(line.Contains(" class ") || line.Contains(" interface ") ? parseState.Class : parseState.Function);
+                }
+                while (runningDepth < variables.Count)
+                {
+                    variables.Pop();
+                    states.Pop();
+                }
+
+                string tmp = line;
+
+                int throwsIndex = tmp.LastIndexOf(" throws ");
+                if (throwsIndex > 0)
+                {
+                    tmp = tmp.Substring(0, throwsIndex) + " {";
+                }
+
+                if (states.Peek() == parseState.Global)
+                {
+                    if (tmp.Trim().StartsWith("package "))
+                    {
+                        tmp = tmp.Replace("package ", "namespace ");
+                        tmp = tmp.Replace('.', '\\');
+                    }
+                }
+
+                if (oldState == parseState.Global && states.Peek() == parseState.Class)
+                {
+                    tmp = tmp.Replace("public ", "");
+                }
+
+                if (oldState == parseState.Class && tmp.Trim().Length > 2 && !tmp.Trim().StartsWith("//"))
+                {
+                    // Look for parameters in the function definition.
+                    bool isPublic = tmp.Contains(" public ");
+                    bool isProtected = tmp.Contains(" protected ");
+                    bool isPrivate = tmp.Contains(" private ");
+                    bool isStatic = tmp.Contains(" static ");
+
+                    string[] parts = tmp.Split('(', ')');
+                    string functionName = parts[0].Split(' ').Last();
+                    int numspace = 0;
+                    while (numspace < tmp.Length && tmp[numspace] == ' ') numspace++;
+
+                    if (states.Peek() == parseState.Function)
+                    {
+                        string[] paramparts = parts[1].Split(',').Where(p => !string.IsNullOrEmpty(p)).Select(p => p.Trim().Split(' ').Last()).ToArray();
+                        foreach (string parampart in paramparts)
+                        {
+                            variables.Peek().DefinedVars.Add(parampart);
+                        }
+
+                        tmp = " ".PadLeft(numspace) +
+                            (isPublic ? "public " : "") +
+                            (isProtected ? "protected " : "") +
+                            (isPrivate ? "private " : "") +
+                            (isStatic ? "static " : "") +
+                            "function " +
+                            functionName + "(" + string.Join(", ", paramparts.ToArray()) + ")" + string.Join("*", parts.Skip(2).ToArray());
+                    }
+                    else
+                    {
+                        string[] parts2 = tmp.Trim().Split(' ');
+
+                        // Declaration assignment
+                        var indexofeq = parts2.Select((p, i) => new Tuple<string, int>(p, i)).LastOrDefault(p => p.Item1 == "=");
+                        if (indexofeq != null)
+                        {
+                            string varname2 = parts2[indexofeq.Item2 - 1];
+                            variables.Peek().DefinedVars.Add(varname2);
+                            tmp = tmp.Replace(" " + parts2[indexofeq.Item2 - 2] + " ", " ").Replace(" final ", " ");
+                        }
+                        else
+                        {
+                            string fieldName = functionName.Trim(';');
+                            variables.Peek().DefinedVars.Add(fieldName);
+                            Console.WriteLine("==" + functionName + "==");
+                            tmp = " ".PadLeft(numspace) +
+                                (isPublic ? "public " : "") +
+                                (isProtected ? "protected " : "") +
+                                (isPrivate ? "private " : "") +
+                                (isStatic ? "static " : "") +
+                                fieldName + ";";
+                        }
+                    }
+                }
+
+                string type = "";
+                string varname = "";
+                if (runningDepth > 0)
+                {
+                    string[] parts = tmp.Trim().Split(' ');
+                    // Plain declaration
+                    if (parts.Length == 2 && parts[0] != "return" && parts[0] != "//")
+                    {
+                        type = parts[0];
+                        varname = parts[1].Trim(';');
+                        Regex re = new Regex(@"^\w+$");
+                        if (re.IsMatch(varname))
+                        {
+                            variables.Peek().DefinedVars.Add(varname);
+                            tmp = null;
+                        }
+                    }
+
+                    // Declaration assignment
+                    if (parts.Length > 2 && parts[2] == "=")
+                    {
+                        type = parts[0];
+                        varname = parts[1];
+                        variables.Peek().DefinedVars.Add(varname);
+                        tmp = tmp.Replace(type + " " + varname + " =", varname + " =");
+                    }
+
+                    // for loop
+                    if (parts.Length > 4 && parts[0] == "for" && parts[3] == ":")
+                    {
+                        type = parts[1];
+                        varname = parts[2];
+                        variables.Peek().DefinedVars.Add(varname);
+                        tmp = tmp.Replace("for " + type + " " + varname + " : " + parts[4], "foreach(" + parts[4].Substring(0, parts[4].Length - 1) + " as " + varname + ") ");
+                    }
+
+                    // catch
+                    if (parts.Length > 3 && parts[0] == "catch" && parts[3] == "{")
+                    {
+                        varname = parts[2].TrimEnd(')');
+                        variables.Peek().DefinedVars.Add(varname);
+                    }
+                }
+
+                if (tmp != null)
+                {
+                    foreach (string var in variables.SelectMany(p => p.DefinedVars))
+                    {
+                        Regex re = new Regex(@"\W" + var + @"\W");
+                        tmp = re.Replace(tmp, (Match m) => m.ToString().Insert(1, "$"));
+                    }
+
+                    tmp = tmp.Replace("System.out.println", "echo ");
+                    if (runningDepth > 0)
+                    {
+                        tmp = tmp.Replace(".", "->");
+                    }
+                    tmp = tmp.Replace('+', '.');
+                    tmp = tmp.Replace("..", "++");
+                    ret.Add(tmp);
+                }
+                //                Console.WriteLine(runningDepth + "\t" + tmp);
+            }
+            return ret.ToArray();
+        }
+
+        private class Frame
+        {
+            public List<string> DefinedVars = new List<string>();
+        }
+    }
+}
