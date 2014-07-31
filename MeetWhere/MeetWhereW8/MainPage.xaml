@@ -36,18 +36,26 @@
         </Grid>
 
         <Canvas x:Name="view" Grid.Row="1" Visibility="Collapsed" >
+            <Image x:Name="viewBackground"  />
             <Canvas x:Name="viewChildren" />
             <Ellipse x:Name="CurrentLoc" Visibility="Collapsed"  Width="500" Height="500" Fill="{StaticResource ListBoxItemSelectedPointerOverBackgroundThemeBrush}" />
         </Canvas>
 
         <Canvas x:Name="overlay" Background="#00000000" Grid.Row="1" Visibility="Collapsed" 
+                ManipulationDelta="Foo_ManipulationDelta_1"
                 PointerWheelChanged="Foo_PointerWheelChanged"
                 PointerPressed="Foo_MouseLeftButtonDown_1" 
                 PointerMoved="Foo_MouseMove_1"
                 PointerReleased="Foo_MouseLeftButtonUp_1"
                 DoubleTapped="Foo_DoubleTap_1"
-                ManipulationMode="All"
+                ManipulationMode="Rotate"
+             
+                ManipulationStarted="overlay_ManipulationStarted"
+                ManipulationCompleted="overlay_ManipulationCompleted" 
+                ManipulationStarting="overlay_ManipulationStarting"
+                ManipulationInertiaStarting="overlay_ManipulationInertiaStarting"
                 >
+             <!--    ManipulationMode="All"-->   
         </Canvas>
         <Grid Grid.Row="0" >
             <Grid.ColumnDefinitions>

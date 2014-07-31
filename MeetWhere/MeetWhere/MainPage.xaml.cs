@@ -22,6 +22,7 @@ using FakePointerEventArgs = System.Windows.Input.MouseEventArgs;
 using FakePage = Microsoft.Phone.Controls.PhoneApplicationPage;
 using FakePoint = System.Windows.Input.StylusPoint;
 using FakePoint2 = System.Windows.Point;
+using FakeManipulationDeltaArgs = System.Windows.Input.ManipulationDeltaEventArgs;
 #else
 using System.Threading.Tasks;
 using Windows.Devices.Geolocation;
@@ -39,6 +40,7 @@ using FakePointerEventArgs = Windows.UI.Xaml.Input.PointerRoutedEventArgs;
 using FakePage = Windows.UI.Xaml.Controls.Page;
 using FakePoint = Windows.Foundation.Point;
 using FakePoint2 = Windows.Foundation.Point;
+using FakeManipulationDeltaArgs = Windows.UI.Xaml.Input.ManipulationDeltaRoutedEventArgs;
 #endif
 using System.Diagnostics;
 using Windows.UI;
@@ -227,19 +229,6 @@ namespace MeetWhere
             e.Handled = true;
         }
 #else
-        private void Foo_ManipulationDelta_1(object sender, ManipulationDeltaEventArgs e)
-        {
-            if (e.PinchManipulation == null)
-            {
-                return;
-            }
-
-            // Scale Manipulation
-            FrameworkElement source = (FrameworkElement)sender;
-            var point = e.PinchManipulation.Current.Center;
-            ScaleIt(e.PinchManipulation.DeltaScale, point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2);
-            e.Handled = true;
-        }
 
         private void CurrentValueChanged(MotionReading reading)
         {
@@ -263,6 +252,23 @@ namespace MeetWhere
             await ShowMap(RoomInfo.Parse(content.Location));
         }
 #endif
+
+        private void Foo_ManipulationDelta_1(object sender, FakeManipulationDeltaArgs e)
+        {
+#if !NETFX_CORE
+
+            if (e.PinchManipulation == null)
+            {
+                return;
+            }
+
+            // Scale Manipulation
+            FrameworkElement source = (FrameworkElement)sender;
+            var point = e.PinchManipulation.Current.Center;
+            ScaleIt(e.PinchManipulation.DeltaScale, point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2);
+            e.Handled = true;
+#endif
+        }
 
         private void ResetMap()
         {
@@ -294,6 +300,11 @@ namespace MeetWhere
 
             double scaleDiff = Math.Min(this.overlay.ActualWidth / view.Width, this.overlay.ActualHeight / view.Width);
             SetScale(scaleDiff * 0.7);
+
+#if NETFX_CORE
+            this.viewBackground.Source = new Windows.UI.Xaml.Media.Imaging.BitmapImage(new Uri(       
+                "http://dev.virtualearth.net/REST/v1/Imagery/Map/Road?ma=47.6403274536133,-122.126655578613,47.6408805847168,-122.125839233398&amp;key=Ai5yRVSgFDSI1LWQoL5fofxSrZuht2QmzXpE7Bj4eEyIPdLlIpZHpWNJEGsnFuVm"));
+#endif
         }
 
         double offsetx;
@@ -643,5 +654,62 @@ namespace MeetWhere
         }
         #endregion
 
+#if NETFX_CORE
+        private void overlay_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
+        {
+            Debug.WriteLine("overlay_ManipulationStarted: " + e.ToString());
+        }
+
+        private void overlay_ManipulationCompleted(object sender, ManipulationCompletedRoutedEventArgs e)
+        {
+            Debug.WriteLine("overlay_ManipulationCompleted: " + e.ToString());
+
+        }
+
+        private void overlay_ManipulationDelta(object sender, ManipulationDeltaRoutedEventArgs e)
+        {
+            Debug.WriteLine("overlay_ManipulationDelta: " + e.ToString());
+
+        }
+
+        private void overlay_ManipulationStarting(object sender, ManipulationStartingRoutedEventArgs e)
+        {
+            Debug.WriteLine("overlay_ManipulationStarting: " + e.ToString());
+            switch (e.Mode)
+            {
+                case ManipulationModes.All:
+                    break;
+                case ManipulationModes.None:
+                    break;
+                case ManipulationModes.Rotate:
+                    break;
+                case ManipulationModes.RotateInertia:
+                    break;
+                case ManipulationModes.Scale:
+                    break;
+                case ManipulationModes.ScaleInertia:
+                    break;
+                case ManipulationModes.System:
+                    break;
+                case ManipulationModes.TranslateInertia:
+                    break;
+                case ManipulationModes.TranslateRailsX:
+                    break;
+                case ManipulationModes.TranslateRailsY:
+                    break;
+                case ManipulationModes.TranslateX:
+                    break;
+                case ManipulationModes.TranslateY:
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void overlay_ManipulationInertiaStarting(object sender, ManipulationInertiaStartingRoutedEventArgs e)
+        {
+
+        }
+#endif
     }
 }
