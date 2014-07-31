@@ -1,31 +1,32 @@
 ﻿using Microsoft.Devices.Sensors;
 using Microsoft.Phone.Controls;
+using Microsoft.Phone.Shell;
 using Microsoft.Phone.UserData;
 using Microsoft.Xna.Framework;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.IsolatedStorage;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using MeetWhere.Cloud;
 using Windows.Devices.Geolocation;
+using Mapper;
+using Mapper.Consumer;
 
-namespace WhereIsMyMeeting2
+namespace MeetWhere
 {
     public partial class MainPage : PhoneApplicationPage
     {
         private Motion motion;
-        private Pedometer pedometer;
         private Geolocator geolocator;
         private Geocoordinate coordinate;
         private PositionStatus status;
         private double? prevRot = null;
-        private System.Windows.Point? curLocUser = null;
         private XamlMapInfo map;
 
-        // Constructor
         public MainPage()
         {
             InitializeComponent();
@@ -46,15 +47,31 @@ namespace WhereIsMyMeeting2
 
         private bool isOnMainScreen()
         {
-            return ContentPanel.Visibility == System.Windows.Visibility.Visible;
+            return ContentPanel.Visibility == Visibility.Visible;
         }
 
         private void backToMainScreen()
         {
-            ContentPanel.Visibility = System.Windows.Visibility.Visible;
-            funky.Visibility = System.Windows.Visibility.Collapsed;
-            Foo.Visibility = System.Windows.Visibility.Collapsed;
+            roomDisplay.Visibility = Visibility.Collapsed;
+            ContentPanel.Visibility = Visibility.Visible;
+            funky.Visibility = Visibility.Collapsed;
+            Foo.Visibility = Visibility.Collapsed;
+            ResetMap();
+        }
+
+        private void ResetMap()
+        {
+            this.roomDisplay.Text = "";
             funkyKids.Children.Clear();
+
+            var t = getTransform(funky);
+            t.CenterX = 0;
+            t.CenterY = 0;
+            t.ScaleX = 0.2;
+            t.ScaleY = 0.2;
+            t.TranslateX = 0;
+            t.TranslateY = 0;
+
             map = null;
         }
 
@@ -105,10 +122,12 @@ namespace WhereIsMyMeeting2
                 }
             }
 
-            pedometer = new Pedometer();
-
             Appointments appointments = new Appointments();
-            appointments.SearchCompleted += (sender, e2) => { DateList.ItemsSource = e2.Results.OrderBy(p => p.StartTime); };
+            appointments.SearchCompleted += (sender, e2) =>
+            {
+                DateList.ItemsSource = e2.Results.OrderBy(p => p.StartTime);
+                Waiter(false);
+            };
             appointments.SearchAsync(DateTime.Now, DateTime.Now.AddDays(7), null);
         }
 
@@ -116,14 +135,9 @@ namespace WhereIsMyMeeting2
         {
             Dispatcher.BeginInvoke(() =>
             {
-                curLoc.Text = status.ToString() + ": " + (coordinate == null ? "N/A" : coordinate.PositionSource.ToString() + "," + coordinate.Accuracy + ":" + coordinate.Latitude + ", " + coordinate.Longitude);
-                if (coordinate == null)
+                CurrentLoc.Visibility = (coordinate == null ? Visibility.Collapsed : Visibility.Visible);
+                if (coordinate != null)
                 {
-                    CurrentLoc.Visibility = System.Windows.Visibility.Collapsed;
-                }
-                else
-                {
-                    CurrentLoc.Visibility = System.Windows.Visibility.Visible;
                     CurrentLoc.Width = coordinate.Accuracy * 10;
                     CurrentLoc.Height = coordinate.Accuracy * 10;
                     Canvas.SetLeft(CurrentLoc, funky.ActualWidth / 2 + (coordinate.Latitude - 47.64147649) * 2000000 - CurrentLoc.Width / 2);
@@ -165,25 +179,6 @@ namespace WhereIsMyMeeting2
 
                     var ar = (CompositeTransform)this.Resources["antiRotation"];
                     ar.Rotation = -t.Rotation;
-                });
-            }
-
-            System.Windows.Point? stride = pedometer.getStrideIfStep(reading);
-            if (curLocUser.HasValue && stride.HasValue)
-            {
-                curLocUser = new System.Windows.Point(
-                    curLocUser.Value.X + stride.Value.X,
-                    curLocUser.Value.Y + stride.Value.Y);
-       
-                // Correct so don't walk through walls
-                curLocUser = map.RebasePointToHall(curLocUser.Value);
-         
-                Dispatcher.BeginInvoke(() =>
-                {
-                    // Combine dist with direction vector. 
-                    CurrentUserLoc.Visibility = System.Windows.Visibility.Visible;
-                    Canvas.SetLeft(CurrentUserLoc, curLocUser.Value.X - CurrentUserLoc.Width / 2);
-                    Canvas.SetTop(CurrentUserLoc, curLocUser.Value.Y - CurrentUserLoc.Height / 2);
                 });
             }
         }
@@ -228,25 +223,6 @@ namespace WhereIsMyMeeting2
         {
             prevMouseLoc = e.StylusDevice.GetStylusPoints((UIElement)sender).Last();
             mouseDown = true;
-
-            if (this.setLocation.IsChecked.HasValue && this.setLocation.IsChecked.Value)
-            {
-                this.setLocation.IsChecked = false;
-
-                // Need to transforom prevMouseLoc from this corrds to funky coords.
-                double x = prevMouseLoc.X;
-                double y = prevMouseLoc.Y;
-                CompositeTransform transform = getTransform(funky);
-                curLocUser = transform.Inverse.Transform(new System.Windows.Point(x, y));
-
-          //      System.Diagnostics.Debug.WriteLine("Orig pt: " + curLocUser);
-                curLocUser = map.RebasePointToHall(curLocUser.Value);
-            //    System.Diagnostics.Debug.WriteLine("Revised pt: " + curLocUser);
-
-                CurrentUserLoc.Visibility = System.Windows.Visibility.Visible;
-                Canvas.SetLeft(CurrentUserLoc, curLocUser.Value.X - CurrentUserLoc.Width / 2);
-                Canvas.SetTop(CurrentUserLoc, curLocUser.Value.Y - CurrentUserLoc.Height / 2);
-            }
         }
 
         private void Foo_MouseMove_1(object sender, MouseEventArgs e)
@@ -267,7 +243,7 @@ namespace WhereIsMyMeeting2
             mouseDown = false;
         }
 
-        private void Foo_DoubleTap_1(object sender, GestureEventArgs e)
+        private void Foo_DoubleTap_1(object sender, System.Windows.Input.GestureEventArgs e)
         {
             CompositeTransform transform = getTransform(funky);
             double newScale = 1.4;
@@ -284,35 +260,66 @@ namespace WhereIsMyMeeting2
             e.Handled = true;
         }
 
-        private void roomNumber_KeyUp_1(object sender, KeyEventArgs e)
+        private void Button_Click_1(object sender, EventArgs e)
         {
-            if (e.Key == Key.Enter)
+            RoomInfo ri = null;
+            TextBox roomNumber = new TextBox()
             {
-                ShowMap(processRoomText());
-            }
+                Margin = new Thickness(0, 14, 12, -2)
+            };
+
+            CustomMessageBox messageBox = new CustomMessageBox()
+            {
+                Title = "Find Room",
+                Message = "Enter room number, in the form '24 1152'",
+                Content = roomNumber,
+                LeftButtonContent = "OK",
+                RightButtonContent = "Cancel",
+                IsFullScreen = false,
+            };
+
+            messageBox.Dismissed += (s2, e2) =>
+            {
+                if (e2.Result == CustomMessageBoxResult.LeftButton && !string.IsNullOrEmpty(roomNumber.Text))
+                {
+                    ri = RoomInfo.Parse(roomNumber.Text);
+                }
+            };
+
+            messageBox.Unloaded += (s2, e2) =>
+            {
+                if (ri != null)
+                {
+                    ShowMap(ri);
+                }
+            };
+
+            messageBox.Show();
         }
 
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        private void Waiter(bool startWait)
         {
-            ShowMap(processRoomText());
+            waitUI.Visibility = (startWait ? Visibility.Visible : Visibility.Collapsed);
         }
 
-        private RoomInfo processRoomText()
-        {
-            return RoomInfo.Parse(roomNumber.Text, (Foo.Visibility == System.Windows.Visibility.Visible ? buildingNumber.Text : null));
-        }
-
-        private void ShowMap(RoomInfo location)
+        private async void ShowMap(RoomInfo location)
         {
             if (location == null) return;
 
-            buildingNumber.Text = location.Building;
-            floorNumber.Text = location.Floor;
-            shortRoomNumber.Text = location.Room;
+            string svgDocContent = await CloudAccesser.LoadMapSvg(location, Waiter);
 
-            ContentPanel.Visibility = System.Windows.Visibility.Collapsed;
-            funky.Visibility = System.Windows.Visibility.Visible;
-            Foo.Visibility = System.Windows.Visibility.Visible;
+            UpdateLoginLogoutUI();
+
+            if (svgDocContent == null) return;
+
+            ResetMap();
+
+            this.roomDisplay.Text = location.ToString();
+
+            roomDisplay.Visibility = Visibility.Visible;
+            ContentPanel.Visibility = Visibility.Collapsed;
+            funky.Visibility = Visibility.Visible;
+            Foo.Visibility = Visibility.Visible;
             funkyKids.Children.Clear();
 
             var f = this.funky;
@@ -322,17 +329,16 @@ namespace WhereIsMyMeeting2
             var dispatcher = this.Dispatcher;
             System.Threading.Thread t = new System.Threading.Thread(() =>
             {
-                map = XamlMapInfo.ParseFromSvg(location);
-                map.Render(f, fk, Foo, textRotation, dispatcher, location);
+                map = new XamlMapInfo(location, svgDocContent);
+                map.Render(f, fk, Foo, textRotation, (x) => dispatcher.BeginInvoke(x), location);
             });
             t.Start();
         }
 
-        private void Button_Click_3(object sender, RoutedEventArgs e)
+        private void Button_Click_3(object sender, EventArgs e)
         {
             backToMainScreen();
         }
-
 
         private void DateList_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
@@ -342,34 +348,65 @@ namespace WhereIsMyMeeting2
             }
             var content = (Appointment)e.AddedItems[0];
             DateList.SelectedIndex = -1;
-            ShowMap(RoomInfo.Parse(content.Location, null));
+            ShowMap(RoomInfo.Parse(content.Location));
         }
 
-        private void Button_Click_4(object sender, RoutedEventArgs e)
+        private void SettingsButton(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(roomNumber.Text))
+            CloudAccesser.ClearCachedMaps();
+        }
+
+        private void GpsButton(object sender, EventArgs e)
+        {
+            MessageBox.Show("Status: " + status.ToString() + "\n" +
+                 (coordinate == null ?
+                 "No coordinate data" :
+                 "Coordinate data source: " + coordinate.PositionSource.ToString() + "\n" +
+                 "Accuracy: " + coordinate.Accuracy + " meters\n" +
+                 "Latitude: " + coordinate.Latitude + "\n" +
+                 "Longitude: " + coordinate.Longitude));
+        }
+
+        private async void LoginButton(object sender, EventArgs e)
+        {
+            if (CloudAccesser.IsLoggedin())
             {
-                this.setLocation.IsChecked = false;
-                var location = processRoomText();
-                if (location != null)
+                CloudAccesser.Logout();
+            }
+            else
+            {
+                Waiter(true);
+                try
                 {
-                    System.Windows.Point loc;
-                    if (map.RoomLocations.TryGetValue(location.Room, out loc))
-                    {
-                        curLocUser = loc;
-                        CurrentUserLoc.Visibility = System.Windows.Visibility.Visible;
-                        Canvas.SetLeft(CurrentUserLoc, curLocUser.Value.X - CurrentUserLoc.Width / 2);
-                        Canvas.SetTop(CurrentUserLoc, curLocUser.Value.Y - CurrentUserLoc.Height / 2);
-                        roomNumber.Text = "";
-                    }
-                    else
-                    {
-                        curLocUser = null;
-                        CurrentUserLoc.Visibility = System.Windows.Visibility.Collapsed;
-                        MessageBox.Show("unable to find room with name " + location.Room);
-                    }
+                    await CloudAccesser.TryLogin();
+                }
+                finally
+                {
+                    Waiter(false);
                 }
             }
+
+            UpdateLoginLogoutUI();
+        }
+
+        private void UpdateLoginLogoutUI()
+        {
+            var loginButton = ApplicationBar.Buttons.OfType<ApplicationBarIconButton>().First(p => p.Text == "login" || p.Text == "logout");
+            if (CloudAccesser.IsLoggedin())
+            {
+                loginButton.Text = "logout";
+                loginButton.IconUri = new Uri("/Images/logout.png", UriKind.Relative);
+            }
+            else
+            {
+                loginButton.Text = "login";
+                loginButton.IconUri = new Uri("/Images/login.png", UriKind.Relative);
+            }
+        }
+
+        private void AboutButton(object sender, EventArgs e)
+        {
+            MessageBox.Show("meet where?\n\nAuthor: Jason Cooke\njcooke@microsoft.com");
         }
     }
 }

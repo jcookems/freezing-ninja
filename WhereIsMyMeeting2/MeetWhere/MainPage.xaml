@@ -1,0 +1,95 @@
+﻿<phone:PhoneApplicationPage
+    x:Class="MeetWhere.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:phone="clr-namespace:Microsoft.Phone.Controls;assembly=Microsoft.Phone"
+    xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    FontFamily="{StaticResource PhoneFontFamilyNormal}"
+    FontSize="{StaticResource PhoneFontSizeNormal}"
+    Foreground="{StaticResource PhoneForegroundBrush}"
+    SupportedOrientations="Portrait" Orientation="Portrait"
+    shell:SystemTray.IsVisible="True">
+
+    <phone:PhoneApplicationPage.Resources>
+        <CompositeTransform Rotation="90" CenterX="25" CenterY="5" x:Key="antiRotation"/>
+    </phone:PhoneApplicationPage.Resources>
+
+    <Grid x:Name="LayoutRoot" Background="{StaticResource PhoneInverseInactiveBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!--<Grid x:Name="ContentPanel" Grid.Row="1"  Background="#80000000" Visibility="Visible" >-->
+        <Grid x:Name="ContentPanel" Grid.Row="1" Visibility="Visible" Background="{StaticResource PhoneTextBoxReadOnlyBrush}" >
+            <ListBox x:Name="DateList" Margin="12,0,12,0" SelectionChanged="DateList_SelectionChanged_1" >
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel  Margin="15">
+                            <TextBlock Text="{Binding Subject}" TextWrapping="NoWrap" FontWeight="Bold" FontSize="24" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding StartTime}" TextWrapping="NoWrap" Margin="4"/>
+                                <TextBlock Text=":" />
+                                <TextBlock Text="{Binding Location}" TextWrapping="NoWrap" FontStyle="Italic"  Margin="4"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <Canvas x:Name="funky" Grid.Row="1" Visibility="Collapsed" >
+            <Canvas.RenderTransform>
+                <CompositeTransform ScaleX="0.2" ScaleY="0.2"/>
+            </Canvas.RenderTransform>
+            <Canvas x:Name="funkyKids"/>
+            <Ellipse x:Name="CurrentLoc" Visibility="Collapsed"  Width="500" Height="500" Stroke="{StaticResource PhoneTextBoxEditBorderBrush}" Fill="{StaticResource PhoneSemitransparentBrush}" />
+            <!--<Ellipse x:Name="CurrentUserLoc" Visibility="Collapsed" Width="150" Height="150" Stroke="#D0000000" Fill="#B0FFFF00" />-->
+        </Canvas>
+
+        <Canvas x:Name="Foo" Background="{StaticResource TransparentBrush}" Grid.Row="1" Visibility="Collapsed"
+                ManipulationDelta="Foo_ManipulationDelta_1"
+                MouseLeftButtonDown="Foo_MouseLeftButtonDown_1"
+                MouseMove="Foo_MouseMove_1"
+                MouseLeftButtonUp="Foo_MouseLeftButtonUp_1"
+                DoubleTap="Foo_DoubleTap_1">
+        </Canvas>
+        <Grid  Grid.Row="0" Background="{StaticResource PhoneTextBoxReadOnlyBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="meet where?"
+                       FontSize="45" Margin="10"  VerticalAlignment="Center" />
+            <TextBlock x:Name="roomDisplay" Grid.Column="1"
+                       FontSize="45" Margin="10" VerticalAlignment="Center"
+                       FontWeight="Bold" HorizontalAlignment="Right" />
+        </Grid>
+        <Grid x:Name="waitUI" Grid.Row="1" Background="{StaticResource PhoneTextBoxReadOnlyBrush}" Visibility="Visible">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="1">
+                <ProgressBar IsIndeterminate="True" Margin="5" />
+                <TextBlock Text="Loading..." HorizontalAlignment="Center" Margin="5" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+    <phone:PhoneApplicationPage.ApplicationBar>
+        <shell:ApplicationBar IsVisible="True" IsMenuEnabled="True" Mode="Default"  Opacity="0.5" >
+            <shell:ApplicationBarIconButton IconUri="/Images/back.png" Text="back" Click="Button_Click_3" />
+            <shell:ApplicationBarIconButton IconUri="/Images/feature.search.png" Text="location" Click="Button_Click_1" />
+            <shell:ApplicationBarIconButton IconUri="/Images/questionmark.png" Text="GPS" Click="GpsButton" />
+            <shell:ApplicationBarIconButton IconUri="/Images/login.png" Text="login" Click="LoginButton" />
+            <shell:ApplicationBar.MenuItems>
+                <shell:ApplicationBarMenuItem Text="clear map cache" Click="SettingsButton" />
+                <shell:ApplicationBarMenuItem Text="about" Click="AboutButton" />
+            </shell:ApplicationBar.MenuItems>
+        </shell:ApplicationBar>
+    </phone:PhoneApplicationPage.ApplicationBar>
+</phone:PhoneApplicationPage>

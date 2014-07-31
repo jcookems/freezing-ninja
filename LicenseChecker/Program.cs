@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -8,16 +9,66 @@ namespace LicenseChecker
     internal class Program
     {
         //        static string path = @"C:\Users\jcooke\Desktop\WindowsAzure-azure-sdk-for-java";
-         static string path = @"C:\dd\git\jcooke\azure-sdk-for-ruby";
-//        static string path = @"C:\dd\git\jcooke\socket.io-servicebus";
+        static string path = @"C:\Users\jcooke\Desktop\azure-mobile-services-master";
+        //        static string path = @"C:\dd\git\jcooke\socket.io-servicebus";
         //        static string path = @"C:\dd\git\jcooke\azure-sdk-for-java-pr";
         //        static string path = @"C:\users\jcooke\desktop\azure-sdk-for-java-pr-dev";
 
 
         private static string[] skipExtensions = new string[] {
+            ".png",
+            ".jpg",
+            ".gitignore",
+            ".storyboard",
+            ".jar",
+            ".nupkg",
+            ".lnk",
+            ".nuspec",
+            ".dll",
+            ".sln",
+            ".csproj",
+            ".jsproj",
+            ".Designer.cs",
+            ".resx",
+            ".json",
+            ".pfx",
+            ".ps1",
+            ".rtf",
+            ".targets",
+            ".config",
+            ".pbxproj",
+            ".xib",
+            ".plist",
+            ".pch", 
+            ".strings",
+            ".css",
+            ".properties",
+            ".bat",
+            ".sh",
+            ".txt",
+            ".md",
+            ".command",
+            ".xcworkspacedata",
+            ".library",
+            ".resjson",
+            ".user",
+            ".appxmanifest",
+            ".xml",
+            ".pri",
+            ".min.js",
         };
         private static string[] skipFiles = new string[] {
-            "package.html"
+            "package.html",
+            "AssemblyInfo.cs",
+            "NuGet.targets",
+            "_._",
+            ".gitattributes",
+            ".gitmodules",
+            ".classpath",
+            ".pmd",
+            ".project",
+            "WindowsAzureMobileServices",
+            "Settings.settings",
         };
         private static string[] skipFolders = new string[] {
            @"\.git\",
@@ -29,31 +80,37 @@ namespace LicenseChecker
            @"\doc\",
            @"\test\fixtures\",
            @"node_modules\",
+           @"\quickstart\",
         };
 
-        private static string[] firstLicenseLines = {
+        private static string[] firstLicenseLines =
+        {
             @"Copyright Microsoft Corporation",
             @"Copyright (c) Microsoft. All rights reserved.",
             @"Copyright (c) Microsoft.  All rights reserved.",
-                                                    };
-        private static string[] licenseText = @"
-Licensed under the Apache License, Version 2.0 (the ""License"");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
+            @"Copyright (c) Microsoft Corporation. All rights reserved.",
+            @"Copyright (c) Microsoft Open Technologies, Inc.",
+        };
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an ""AS IS"" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOptions.None);
+        private static string[] licenseText = new string[] { };
+        //@"
+        //Licensed under the Apache License, Version 2.0 (the ""License"");
+        //you may not use this file except in compliance with the License.
+        //You may obtain a copy of the License at
+        //http://www.apache.org/licenses/LICENSE-2.0
+        //
+        //Unless required by applicable law or agreed to in writing, software
+        //distributed under the License is distributed on an ""AS IS"" BASIS,
+        //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        //See the License for the specific language governing permissions and
+        //limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOptions.None);
 
         private static void Main(string[] args)
         {
             RecursiveValidator.doit(path, CheckLicense, "license");
-            RecursiveValidator.doit(path, checkASCII, "ASCII");
-            RecursiveValidator.doit(path, removeEOLWhitespace, "EOL Whitespace");
-            Console.ReadLine();
+           //      RecursiveValidator.doit(path, checkASCII, "ASCII");
+            //      RecursiveValidator.doit(path, removeEOLWhitespace, "EOL Whitespace");
+            ReadLine();
         }
 
         class RecursiveValidator
@@ -67,15 +124,26 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
                 RecursiveValidator x = new RecursiveValidator();
                 x.doitWorker(targetPath, validator, description);
 
-                Console.WriteLine();
+                WriteLine();
                 foreach (string s in x.badFiles)
                 {
-                    Console.WriteLine(s);
+                    WriteLine(s);
                 }
 
-                Console.WriteLine();
-                Console.WriteLine(x.goodCounter + " out of " + x.totalCounter + " pass the " + description + " test");
+                WriteLine();
+                WriteLine(x.goodCounter + " out of " + x.totalCounter + " pass the " + description + " test");
+
+                foreach (var xx in x.badFiles.Select(p => new { ext = p.Split('.').Reverse().First(), name = p }).GroupBy(p => p.ext))
+                {
+                    WriteLine(xx.Key);
+                    foreach (var yy in xx)
+                    {
+                        WriteLine("    " + yy.name);
+                    }
+                }
+
             }
+
 
             private void doitWorker(string targetPath, Func<string[], string, bool> validator, string description)
             {
@@ -92,7 +160,9 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
 
             private void doitWorkerWorker(string fileName, Func<string[], string, bool> validator)
             {
-                if (skipExtensions.Any(p => fileName.EndsWith(p)) || skipFiles.Any(p => fileName.EndsWith(p)) || skipFolders.Any(p => fileName.Contains(p)))
+                if (skipExtensions.Any(p => fileName.ToLowerInvariant().EndsWith(p.ToLowerInvariant())) ||
+                    skipFiles.Any(p => fileName.ToLowerInvariant().EndsWith(p.ToLowerInvariant())) ||
+                    skipFolders.Any(p => fileName.ToLowerInvariant().Contains(p.ToLowerInvariant())))
                 {
                     return;
                 }
@@ -100,7 +170,7 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
                 string[] lines = File.ReadAllLines(fileName);
 
                 bool good = validator(lines, fileName);
-                Console.Write(good ? "." : "X");
+                Write(good ? "." : "X");
                 if (good)
                 {
                     goodCounter++;
@@ -113,6 +183,8 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
                 totalCounter++;
                 return;
             }
+
+
         }
 
         private static bool checkASCII(string[] lines, string fileName)
@@ -120,12 +192,12 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
             var nonAsciiLines = lines.Where(p => p.Any(q => ((int)q) > 127)).ToArray();
             if (nonAsciiLines.Length > 0)
             {
-                Console.WriteLine(fileName);
+                WriteLine(fileName);
                 foreach (String s in nonAsciiLines)
                 {
-                    Console.WriteLine(s);
-                    Console.WriteLine(string.Join("", s.Select(q => (((int)q) > 127) ? "*" : " ")));
-                    Console.WriteLine("");
+                    WriteLine(s);
+                    WriteLine(string.Join("", s.Select(q => (((int)q) > 127) ? "*" : " ")));
+                    WriteLine("");
                 }
             }
             return nonAsciiLines.Length == 0;
@@ -177,13 +249,13 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
                             thisTryOK = false;
                             if (!wroteOnce)
                             {
-                                Console.WriteLine();
-                                Console.WriteLine(fileName);
+                                WriteLine();
+                                WriteLine(fileName);
                                 wroteOnce = true;
                             }
-                            Console.WriteLine("Line: " + (i + k));
-                            Console.WriteLine("'" + lines[i + k] + "'");
-                            Console.WriteLine("'" + licenseText[k] + "'");
+                            WriteLine("Line: " + (i + k));
+                            WriteLine("'" + lines[i + k] + "'");
+                            WriteLine("'" + licenseText[k] + "'");
                         }
                         else
                         {
@@ -215,13 +287,13 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
                                 thisTryOK = false;
                                 if (!wroteOnce)
                                 {
-                                    Console.WriteLine();
-                                    Console.WriteLine(fileName);
+                                    WriteLine();
+                                    WriteLine(fileName);
                                     wroteOnce = true;
                                 }
-                                Console.WriteLine("Line: " + (i + k));
-                                Console.WriteLine("'" + lines[i + k] + "'");
-                                Console.WriteLine("'" + prefix + " " + licenseText[k] + "'");
+                                WriteLine("Line: " + (i + k));
+                                WriteLine("'" + lines[i + k] + "'");
+                                WriteLine("'" + prefix + " " + licenseText[k] + "'");
                             }
                         }
                     }
@@ -236,5 +308,21 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
 
             return gotMatch;
         }
+
+        private static void Write(string p)
+        {
+            Console.Write(p);
+            Debug.Write(p);
+        }
+        private static void ReadLine()
+        {
+            Console.ReadLine();
+        }
+        private static void WriteLine(string p = "")
+        {
+            Console.WriteLine(p);
+            Debug.WriteLine(p);
+        }
+
     }
 }
