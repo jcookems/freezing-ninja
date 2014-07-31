@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest">
-  <Identity Name="34997jrcooke2001.MeetWhere" Publisher="CN=14ABB054-BC31-4778-93EA-443B0BBA8A8A" Version="1.0.0.0" />
+  <Identity Name="34997jrcooke2001.MeetWhere" Publisher="CN=14ABB054-BC31-4778-93EA-443B0BBA8A8A" Version="1.0.0.3" />
   <Properties>
     <DisplayName>MeetWhere</DisplayName>
     <PublisherDisplayName>jrcooke2001</PublisherDisplayName>
@@ -24,5 +24,7 @@
   <Capabilities>
     <Capability Name="internetClient" />
     <DeviceCapability Name="location" />
+    <DeviceCapability Name="webcam" />
+    <DeviceCapability Name="microphone" />
   </Capabilities>
 </Package>

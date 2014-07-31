@@ -14,6 +14,9 @@
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>MeetWhereW8_StoreKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>38F8B0D62DE218B76D0756BE9AD9E488909D7B11</PackageCertificateThumbprint>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -106,6 +109,10 @@
       <Project>{ff0a4a50-7153-46c4-8577-5cf843136d47}</Project>
       <Name>MapperW8</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MappingBase\MappingBase.csproj">
+      <Project>{d3c53466-31bb-4dcd-bf29-85d8b0107022}</Project>
+      <Name>MappingBase</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\MeetWhere\Cloud\AppUser.cs">
@@ -117,9 +124,27 @@
     <Compile Include="..\MeetWhere\Cloud\Map.cs">
       <Link>Cloud\Map.cs</Link>
     </Compile>
+    <Compile Include="..\MeetWhere\Cloud\MapMetadata.cs">
+      <Link>Cloud\MapMetadata.cs</Link>
+    </Compile>
+    <Compile Include="..\MeetWhere\Cloud\WiFiAccessPoint.cs">
+      <Link>Cloud\WiFiAccessPoint.cs</Link>
+    </Compile>
     <Compile Include="..\MeetWhere\MainPage.xaml.cs">
       <Link>MainPage.xaml.cs</Link>
       <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\MeetWhere\XPlat\Cache.cs">
+      <Link>XPlat\Cache.cs</Link>
+    </Compile>
+    <Compile Include="..\MeetWhere\XPlat\CompositeTransformHelper.cs">
+      <Link>XPlat\CompositeTransformHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\MeetWhere\XPlat\FakeAppointment.cs">
+      <Link>XPlat\FakeAppointment.cs</Link>
+    </Compile>
+    <Compile Include="..\MeetWhere\XPlat\UI.cs">
+      <Link>XPlat\UI.cs</Link>
     </Compile>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
@@ -128,12 +153,17 @@
       <DependentUpon>CustomMessageBox.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="..\MeetWhere\MapView.xaml.cs">
+      <Link>MapView.xaml.cs</Link>
+      <DependentUpon>MapView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <Content Include="Fonts\LiveSymbol.ttf" />
     <None Include="MeetWhereW8_StoreKey.pfx" />
     <None Include="MeetWhereW8_TemporaryKey.pfx" />
     <None Include="packages.config" />
@@ -165,24 +195,56 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="MapView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
-    <SDKReference Include="LiveSDKXAML, Version=5.0">
-      <Name>Live SDK</Name>
-    </SDKReference>
-    <SDKReference Include="MobileServicesManagedClient, Version=0.3.0.0">
-      <Name>Windows Azure Mobile Services Managed Client</Name>
-    </SDKReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="WinRTXamlToolkit">
-      <HintPath>..\packages\WinRTXamlToolkit.1.4.2.0\lib\netcore45\WinRTXamlToolkit.dll</HintPath>
+    <Reference Include="Microsoft.Live, Version=5.4.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\LiveSDK.5.4\WindowsXAML\Microsoft.Live.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.16\lib\win8\Microsoft.Threading.Tasks.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks.Extensions">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.16\lib\win8\Microsoft.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Mobile, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\WindowsAzure.MobileServices.1.0.2\lib\netcore45\Microsoft.WindowsAzure.Mobile.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Mobile.Ext, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\WindowsAzure.MobileServices.1.0.2\lib\netcore45\Microsoft.WindowsAzure.Mobile.Ext.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.5.0.6\lib\netcore45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Extensions, Version=2.2.13.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.13\lib\win8\System.Net.Http.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Primitives, Version=4.2.13.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.13\lib\win8\System.Net.Http.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="WinRTXamlToolkit, Version=1.5.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\WinRTXamlToolkit.1.5.2.0\lib\netcore45\WinRTXamlToolkit.dll</HintPath>
+    </Reference>
+    <Reference Include="ZXing">
+      <HintPath>..\packages\ZXing.Net.0.11.0.1\lib\netcore45\ZXing.winmd</HintPath>
     </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '11.0' ">
     <VisualStudioVersion>11.0</VisualStudioVersion>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Import Project="..\packages\Microsoft.Bcl.Build.1.0.8\tools\Microsoft.Bcl.Build.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

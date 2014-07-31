@@ -1,31 +1,52 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
+#if NETFX_CORE
 using Windows.System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
+using FakeKeyEventArgs = Windows.UI.Xaml.Input.KeyRoutedEventArgs;
+#else
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows;
+using FakeKeyEventArgs = System.Windows.Input.KeyEventArgs;
+#endif
 
 namespace MeetWhere
 {
+#if NETFX_CORE
     public sealed partial class CustomMessageBox : UserControl
+#else
+    public sealed partial class CustomMessageBox : Window
+#endif
     {
+#if NETFX_CORE
         private Popup _dialogPopup;
         private Panel root;
+#endif
 
         public CustomMessageBox()
         {
             this.InitializeComponent();
+#if NETFX_CORE
             this.root = (Panel)((Page)((Frame)Window.Current.Content).Content).Content;
             this.LayoutRoot.Tapped += OnBackgroundTap;
+#else
+//            this.root = (Panel)((Page)((Frame)Application.Current.Windows[0].Content).Content).Content;
+#endif
         }
 
+#if !NETFX_CORE && !WINDOWS_PHONE
+new
+#endif
         public string Title { get { return this.title.Text; } set { this.title.Text = value; } }
 
         public string Message { get { return this.message.Text; } set { this.message.Text = value; } }
 
-        public new UIElement Content { get { return this.userContent.Children.FirstOrDefault(); } set { this.userContent.Children.Add(value); } }
+        public new UIElement Content { get { return this.userContent.Children[0]; } set { this.userContent.Children.Add(value); } }
 
         public string LeftButtonContent { get { return this.acceptButton.Content.ToString(); } set { this.acceptButton.Content = value; } }
 
@@ -33,15 +54,22 @@ namespace MeetWhere
 
         public bool IsFullScreen { get; set; }
 
-        private void OnGlobalKeyUp(object sender, KeyRoutedEventArgs e)
+        private void OnGlobalKeyUp(object sender, FakeKeyEventArgs e)
         {
-            if (e.Key == VirtualKey.Escape)
+            if (e.Key ==
+#if !NETFX_CORE
+ System.Windows.Input.Key
+#else
+ VirtualKey
+#endif
+.Escape)
             {
                 cancelClick(sender, e);
                 e.Handled = true;
             }
         }
 
+#if NETFX_CORE
         private void OnBackgroundTap(object sender, TappedRoutedEventArgs e)
         {
             if (e.OriginalSource == sender)
@@ -50,7 +78,9 @@ namespace MeetWhere
                 e.Handled = true;
             }
         }
+#endif
 
+#if NETFX_CORE
         private void ResizeLayoutRoot()
         {
             this.Width = root.ActualWidth;
@@ -73,16 +103,20 @@ namespace MeetWhere
             ResizeLayoutRoot();
         }
 
-        private void Close()
+        public void Dismiss()
         {
-            _dialogPopup.IsOpen = false;
-            root.SizeChanged -= OnParentSizeChanged;
-            root.Children.Remove(_dialogPopup);
-            _dialogPopup.Child = null;
-            _dialogPopup = null;
-            Window.Current.Content.KeyUp -= OnGlobalKeyUp;
-            this.Visibility = Visibility.Collapsed;
+            if (_dialogPopup != null && _dialogPopup.IsOpen)
+            {
+                _dialogPopup.IsOpen = false;
+                root.SizeChanged -= OnParentSizeChanged;
+                root.Children.Remove(_dialogPopup);
+                _dialogPopup.Child = null;
+                _dialogPopup = null;
+                Window.Current.Content.KeyUp -= OnGlobalKeyUp;
+                this.Visibility = Visibility.Collapsed;
+            }
         }
+#endif
 
         private void acceptClick(object sender, RoutedEventArgs e)
         {
@@ -106,7 +140,11 @@ namespace MeetWhere
                 }
             }
 
-            Close();
+#if NETFX_CORE
+            this.Dismiss();
+#else 
+            this.Close();
+#endif
 
             if (this.Dismissed != null)
             {

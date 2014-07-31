@@ -21,10 +21,10 @@ namespace MeetWhere.Cloud
         public double CenterLong { get; set; }
 
         [DataMember(Name = "mapsize")]
-        public double MapSize { get; set; }
-
-        [DataMember(Name = "geosize")]
-        public double GeoSize { get; set; }
+        public int MapSize { get; set; }
+        
+        [DataMember(Name = "zoomlevel")]
+        public int ZoomLevel { get; set; }
 
         [DataMember(Name = "angle")]
         public double Angle { get; set; }

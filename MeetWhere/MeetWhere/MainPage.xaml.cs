@@ -8,6 +8,8 @@ using System;
 
 #if WINDOWS_PHONE || NETFX_CORE
 using Windows.Devices.Geolocation;
+#else
+using WiFiAPMapper;
 #endif
 
 #if WINDOWS_PHONE
@@ -58,6 +60,9 @@ using ZXing;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.Storage.Streams;
 using Windows.Media.MediaProperties;
+using System.Collections.Generic;
+using MeetWhere.XPlat;
+
 #else
 using FakeDoubleTapEventArgs = System.Windows.Input.MouseEventArgs;
 using FakeManipulationDeltaArgs = System.Windows.Input.ManipulationDeltaEventArgs;
@@ -71,8 +76,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows;
 using MeetWhere.XPlat;
-#endif
+using System.Collections.Generic;
+using System.Threading;
 
+#endif
+using MappingBase;
 
 namespace MeetWhere
 {
@@ -82,10 +90,10 @@ namespace MeetWhere
         private Motion motion;
         private double? prevRot = null;
 #endif
+        private GeoCoord coordinate = GeoCoord.Empty;
+        private string status = "N/A";
 #if WINDOWS_PHONE || NETFX_CORE
         private Geolocator geolocator;
-        private Geocoordinate coordinate;
-        private PositionStatus status;
 #endif
         // This factor is to combat clipping and smooshing of the controls in XAML
         private double mapScaleFactor = 0.25;
@@ -107,7 +115,7 @@ namespace MeetWhere
                 }
 #else
                 backToMainScreen();
-                await UI.DummyTask();
+                await Task.Delay(0);
                 Waiter(false);
 #endif
             };
@@ -143,7 +151,7 @@ namespace MeetWhere
             view.ResetMap();
         }
 
-        private async Task ShowMap(RoomInfo location, double? longitude = null, double? latitude = null)
+        private async Task ShowMap(RoomInfo location, GeoCoord? loc = null)
         {
             if (location == null) return;
 
@@ -172,9 +180,9 @@ namespace MeetWhere
             await map.Render(view.LiveChildCollection, view.TextRotation, (a, b, c) =>
                 {
                     this.view.SetViewForMap(a, b, c);
-                    if (latitude.HasValue && longitude.HasValue)
+                    if (loc.HasValue)
                     {
-                        view.ShowScanLoc(longitude.Value, latitude.Value);
+                        view.ShowScanLoc(loc.Value);
                     }
                 }, RunOnUIThread, location, overlay);
         }
@@ -203,12 +211,14 @@ namespace MeetWhere
 
                 geolocator.StatusChanged += (sender, args) =>
                 {
-                    status = args.Status;
+                    status = args.Status.ToString();
                     ShowLoc();
                 };
                 geolocator.PositionChanged += (sender, args) =>
                 {
-                    coordinate = args.Position.Coordinate;
+                    coordinate = new GeoCoord(args.Position.Coordinate.Latitude,
+                        args.Position.Coordinate.Longitude,
+                        args.Position.Coordinate.Accuracy);
                     ShowLoc();
                 };
             }
@@ -237,20 +247,25 @@ namespace MeetWhere
                 List<FakeAppointment> res = e2.Results.Select(p => new FakeAppointment(p)).ToList();
                 if (res.Count == 0)
                 {
-                    res.Add(new FakeAppointment() { Subject = "Zumo test Team meeting", StartTime = new DateTime(2013, 7, 25), Location = "Conf Room 2/2063 (8) AV" });
+                    res.Add(new FakeAppointment( "Zumo test Team meeting",  new DateTime(2013, 7, 25), "Conf Room 2/2063 (8) AV" ));
                 }
                 this.DateList.ItemsSource = res.OrderBy(p => p.StartTime);
                 Waiter(false);
             };
             appointments.SearchAsync(DateTime.Now, DateTime.Now.AddDays(7), null);
 #else
+            List<FakeAppointment> res = new List<FakeAppointment>();
+            if (res.Count == 0)
+            {
+                res.Add(new FakeAppointment("Zumo test Team meeting", new DateTime(2013, 7, 25), "Conf Room 2/2063 (8) AV"));
+            }
+            this.DateList.ItemsSource = res.OrderBy(p => p.StartTime);
             Waiter(false);
 #endif
         }
 
 #endif
 
-#if WINDOWS_PHONE
         private async void DateList_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count == 0)
@@ -261,8 +276,6 @@ namespace MeetWhere
             DateList.SelectedIndex = -1;
             await ShowMap(RoomInfo.Parse(content.Location));
         }
-#endif
-
 
 #if !WINDOWS_PHONE
         private void Foo_PointerWheelChanged(object sender, FakeMouseWheelEventArgs e)
@@ -367,30 +380,65 @@ namespace MeetWhere
             isTagGenEnabled = !isTagGenEnabled;
         }
 
-        private void Foo_MouseLeftButtonDown_1(object sender, FakePointerButtonEventArgs e)
+        private async void Foo_MouseLeftButtonDown_1(object sender, FakePointerButtonEventArgs e)
         {
             FrameworkElement source = (FrameworkElement)sender;
             prevMouseLoc = GetPointerPoint(sender, e);
+            var geo = view.GetGeocordOfPoint(prevMouseLoc.X, prevMouseLoc.Y);
+            Debug.WriteLine("Clicked at " + geo);
+            view.ShowScanLoc(geo);
+            string geoLoc = geo.Longitude.ToString("F5") + "," + geo.Latitude.ToString("F5");
             if (isTagGenEnabled)
             {
-                var geo = view.GetGeocordOfPoint(prevMouseLoc.X, prevMouseLoc.Y);
-                view.ShowScanLoc(geo.Y, geo.X);
-                string url = "https://jcookedemo.azure-mobile.net/api/getinfo?cp=" + geo.X.ToString("F5") + "," + geo.Y.ToString("F5") +
-                    "&bld=" + view.building.ToString() +
-                    "&flr=" + view.floor.ToString();
+                view.ShowScanLoc(geo);
+                string url = "https://jcookedemo.azure-mobile.net/api/getinfo?cp=" + geoLoc +
+                    "&bld=" + view.Building.ToString() +
+                    "&flr=" + view.Floor.ToString();
                 string tag = "http://chart.apis.google.com/chart?cht=qr&chs=120x120&chld=L&choe=ISO-8859-1&chl=" + Uri.EscapeDataString(url);
                 Debug.WriteLine(tag);
             }
-
-            mouseDown = true;
+#if !WINDOWS_PHONE && !NETFX_CORE
+            if (this.scanWiFi.IsChecked.Value)
+            {
+                Waiter(true);
+                WiFiMapper.Update(geo.Latitude, geo.Longitude);
+                Waiter(false);
+            }
+            else
+#endif
+            {
+                await Task.Delay(0);
+                mouseDown = true;
+            }
         }
 
-#if NETFX_CORE || WINDOWS_PHONE
+#if !WINDOWS_PHONE && !NETFX_CORE
+        private IEnumerable<WiFiAccessPoint> aps;
+        private async void scanWiFi_Click(object sender, RoutedEventArgs e)
+        {
+            if (!this.scanWiFi.IsChecked.Value)
+            {
+                aps = WiFiMapper.ProcessCollectedData(view.Building, view.Floor);
+
+                view.ShowAPsPoints(aps);
+
+                var x = await WiFiMapper.GetGeoFromWiFi(aps);
+                view.ShowScanLoc(x);
+                Debug.WriteLine(x);
+            }
+            else
+            {
+                var x = WiFiMapper.SetDefaults();
+                view.ShowAPsPoints(x);
+            }
+        }
+
+#endif
+
         private void ShowLoc()
         {
             RunOnUIThread(() => view.UpdateCurrent(coordinate));
         }
-#endif
 
         private void Foo_MouseMove_1(object sender, FakePointerEventArgs e)
         {
@@ -512,20 +560,15 @@ namespace MeetWhere
             CloudAccesser.ClearCachedMaps();
         }
 
-#if WINDOWS_PHONE || NETFX_CORE
         private void GpsButton(object sender, object e)
         {
             MessageBoxShow("Status: " + status.ToString() + "\n" +
                  (coordinate == null ?
                  "No coordinate data" :
-#if !NETFX_CORE
- "Coordinate data source: " + coordinate.PositionSource.ToString() + "\n" +
-#endif
- "Accuracy: " + coordinate.Accuracy + " meters\n" +
+                 "Accuracy: " + coordinate.Accuracy + " meters\n" +
                  "Latitude: " + coordinate.Latitude + "\n" +
                  "Longitude: " + coordinate.Longitude));
         }
-#endif
 
 #if NETFX_CORE || WINDOWS_PHONE
         private async void LoginButton(object sender, object e)
@@ -644,7 +687,7 @@ namespace MeetWhere
 
         async private void enterLocationCoords_click(object sender, RoutedEventArgs e)
         {
-            Tuple<double, double> geoloc = null;
+            GeoCoord geoloc = GeoCoord.Empty;
 
             try
             {
@@ -669,16 +712,11 @@ namespace MeetWhere
                 {
                     if (e2.Result == CustomMessageBoxResult.LeftButton && !string.IsNullOrEmpty(coordString.Text))
                     {
-                        var parts = coordString.Text.Split(',').Select(p => p.Trim()).ToArray();
-                        if (parts.Length != 2) return;
-
-                        double latitude;
-                        if (!double.TryParse(parts[0], out latitude)) return;
-
-                        double longitude;
-                        if (!double.TryParse(parts[1], out longitude)) return;
-
-                        geoloc = new Tuple<double, double>(latitude, longitude);
+                        var x = GeoCoord.Parse(coordString.Text);
+                        if (x.HasValue)
+                        {
+                            geoloc = x.Value;
+                        }
                     }
                 };
 
@@ -686,11 +724,11 @@ namespace MeetWhere
                 messageBox.Show();
                 await tcs.Task;
 
-                if (geoloc != null)
+                if (geoloc != GeoCoord.Empty)
                 {
                     var mmd = view.MapMetadata;
-                    mmd.CenterLat = geoloc.Item1;
-                    mmd.CenterLong = geoloc.Item2;
+                    mmd.CenterLat = geoloc.Latitude;
+                    mmd.CenterLong = geoloc.Longitude;
                     view.MapMetadata = mmd;
                 }
             }
@@ -916,29 +954,10 @@ namespace MeetWhere
                     }
                 }
 
-                double? lat = null;
-                double? lon = null;
-                if (loc != null)
-                {
-                    var x = loc.Split(',');
-                    if (x.Length == 2)
-                    {
-                        double tmp;
-                        if (double.TryParse(x[0], out tmp))
-                        {
-                            lon = tmp;
-                        }
-
-                        if (double.TryParse(x[1], out tmp))
-                        {
-                            lat = tmp;
-                        }
-                    }
-                }
-
+                GeoCoord? locVal = GeoCoord.Parse(loc);
                 if (!string.IsNullOrEmpty(building) && !string.IsNullOrEmpty(floor))
                 {
-                    await ShowMap(RoomInfo.Parse(building + "/" + (room == null ? floor : room)), lat, lon);
+                    await ShowMap(RoomInfo.Parse(building + "/" + (room == null ? floor : room)), locVal);
                 }
             }
             finally
@@ -980,5 +999,6 @@ namespace MeetWhere
 
         }
 #endif
+
     }
 }

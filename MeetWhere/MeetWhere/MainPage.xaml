@@ -58,11 +58,17 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
             <TextBlock Text="meet where?" Grid.Column="0"
                        FontSize="45" Margin="10" VerticalAlignment="Center" />
-            <TextBlock x:Name="roomDisplay" Grid.Column="1"
+            <TextBlock Text="wdfg" x:Name="roomDisplay" Grid.Column="1"
                        FontSize="45" Margin="10" VerticalAlignment="Center"
                        FontWeight="Bold" HorizontalAlignment="Right" />
+
+            <TextBlock Grid.Row="1" Text="sdfg" />
         </Grid>
         <Grid x:Name="waitUI" Grid.Row="1" Visibility="Visible" Background="#E5323232">
             <Grid.RowDefinitions>

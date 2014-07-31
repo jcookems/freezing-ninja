@@ -3,9 +3,13 @@ using System;
 using System.Diagnostics;
 #if NETFX_CORE || WINDOWS_PHONE
 using Windows.Devices.Geolocation;
+#else
+using WiFiAPMapper;
 #endif
 using MeetWhere.Cloud;
 using MeetWhere.XPlat;
+using System.Linq;
+using System.Collections.Generic;
 
 #if !NETFX_CORE
 using System.Windows;
@@ -16,6 +20,8 @@ using System.Windows.Shapes;
 using FakePoint = System.Windows.Input.StylusPoint;
 using FakePoint2 = System.Windows.Point;
 using FakeVisibility = System.Windows.Visibility;
+using System.Text;
+
 #else
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -25,20 +31,31 @@ using Windows.UI.Xaml.Shapes;
 using FakePoint = Windows.Foundation.Point;
 using FakePoint2 = Windows.Foundation.Point;
 using FakeVisibility = Windows.UI.Xaml.Visibility;
+
 #endif
+using MappingBase;
+
 
 namespace MeetWhere
 {
     public partial class MapView : UserControl
     {
-        private FakePoint2 geoC;
-        private double mapSize;
-        private double geoSize;
-#if WINDOWS_PHONE || NETFX_CORE
-        private Geocoordinate coordinate;
-#endif
-        public int building { get; private set; }
-        public int floor { get; private set; }
+        private GeoCoord geoC;
+        private int mapSize;
+        private int zoomLevel;
+        private GeoCoord coordinate;
+        private double MetersPerScreenPoint
+        {
+            get
+            {
+                // This is Bing-Maps specific
+                double MapSize = (uint)256 << zoomLevel; // 256 * 2^levelOfDetail
+                return geoC.LonDegreeSizeInMeters * 360 / MapSize;
+            }
+        }
+
+        public int Building { get; private set; }
+        public int Floor { get; private set; }
 
         public MapView()
         {
@@ -106,12 +123,12 @@ namespace MeetWhere
         {
             set
             {
-                this.building = value.Building;
-                this.floor = value.Floor;
+                this.Building = value.Building;
+                this.Floor = value.Floor;
 
-                this.geoC = new FakePoint2(value.CenterLong, value.CenterLat);
+                this.geoC = new GeoCoord(value.CenterLat, value.CenterLong);
                 this.mapSize = value.MapSize;
-                this.geoSize = value.GeoSize;
+                this.zoomLevel = value.ZoomLevel;
                 this.ViewChildrenTransform.Rotation = -value.Angle;
                 this.ViewChildrenTransform.Scale = value.Scale;
                 this.ViewChildrenTransform.TranslateX = value.OffsetX;
@@ -123,13 +140,13 @@ namespace MeetWhere
             {
                 return new MapMetadata()
                 {
-                    Building = this.building,
-                    Floor = this.floor,
+                    Building = this.Building,
+                    Floor = this.Floor,
 
-                    CenterLat = this.geoC.Y,
-                    CenterLong = this.geoC.X,
+                    CenterLat = this.geoC.Latitude,
+                    CenterLong = this.geoC.Longitude,
                     MapSize = this.mapSize,
-                    GeoSize = this.geoSize,
+                    ZoomLevel = this.zoomLevel,
 
                     Angle = -this.ViewChildrenTransform.Rotation,
                     Scale = this.ViewChildrenTransform.Scale,
@@ -180,36 +197,22 @@ namespace MeetWhere
 
             Canvas.SetLeft(this.viewBackground, -mapSize / 2);
             Canvas.SetTop(this.viewBackground, -mapSize / 2);
-
-            UpdateImage();
-        }
+    }
 
         private void UpdateImage()
         {
-            var foo = "ma=" +
-                (geoC.Y - geoSize) + "," +
-                (geoC.X - geoSize) + "," +
-                (geoC.Y + geoSize) + "," +
-                (geoC.X + geoSize) + "&mapSize=" + mapSize + "," + mapSize;
-
-            Uri imageAddress = new Uri("https://jcookedemo.azure-mobile.net/api/getmapimage?" + foo);
-            Debug.WriteLine(imageAddress.ToString());
-
-            var im = new BitmapImage(imageAddress);
-            im.DownloadProgress += (s, e) => Debug.WriteLine("Image download progress: " + e.Progress);
+            var loadTask = CloudAccesser.LoadMapImage(geoC, this.zoomLevel, mapSize);
+            loadTask.ContinueWith(t =>
+            {
+                var x = UI.InvokeOnUI(this.Dispatcher, async () =>
+                {
+                    BitmapImage bm = await Cache.GetImage(t.Result);
+                    this.viewBackground.Source = bm;
 #if WINDOWS_PHONE || NETFX_CORE
-            im.ImageFailed += (s, e) => Debug.WriteLine("Image failed: " +
-#if !NETFX_CORE
- e.ErrorException);
-#else
- e.ErrorMessage);
+                    this.UpdateCurrentUI();
 #endif
-            im.ImageOpened += (s, e) => Debug.WriteLine("Image opened");
-#endif
-            this.viewBackground.Source = im;
-#if WINDOWS_PHONE || NETFX_CORE
-            this.UpdateCurrentUI();
-#endif
+                });
+            });
         }
 
         public void ResetMap()
@@ -294,10 +297,9 @@ namespace MeetWhere
         {
             ViewTransform.TranslateX += x;
             ViewTransform.TranslateY += y;
-            Debug.WriteLine("(" + ViewTransform.TranslateX + ", " + ViewTransform.TranslateY + ")");
         }
 
-        public FakePoint2 GetGeocordOfPoint(double x, double y)
+        public GeoCoord GetGeocordOfPoint(double x, double y)
         {
             FakePoint2 v = new FakePoint2(x, y);
 #if NETFX_CORE
@@ -305,28 +307,47 @@ namespace MeetWhere
 #else
             var pointOnMap = ViewTransform.Inverse.Transform(v);
 #endif
-
-            double pX = pointOnMap.X;
-            double pY = pointOnMap.Y;
-
-            double fX2 = pX * 2 / mapSize;
-            double fY2 = pY * 2 / mapSize;
-
-            double Longitude = fX2 * 2 * geoSize + geoC.X;
-            double Latitude = geoC.Y - fY2 * 2 * geoSize * Math.Cos(geoC.Y * Math.PI / 180);
-
             scanLoc.Visibility = FakeVisibility.Visible;
-            return new FakePoint2(Latitude, Longitude);
+            return geoC.FromOffset(pointOnMap.X * MetersPerScreenPoint, pointOnMap.Y * MetersPerScreenPoint);
         }
 
-        public void ShowScanLoc(double Longitude, double Latitude)
+#if !NETFX_CORE && !WINDOWS_PHONE
+        internal void ShowAPsPoints(IEnumerable<WiFiAccessPoint> aps)
+        {
+
+            foreach (var ap in aps)
+            {
+                NewMethod(ap.CenterLatitude, ap.CenterLongitude, ap.Spread * 20);
+            }
+
+        }
+#endif
+        private static Random r = new Random();
+        private void NewMethod(double lat, double lon, double rad)
+        {
+
+            Ellipse e = new Ellipse();
+            this.LayoutRoot.Children.Add(e);
+            var x = new byte[3];
+            r.NextBytes(x);
+#if !NETFX_CORE
+            e.Fill = new SolidColorBrush(Color.FromArgb(255, x[0], x[1], x[2]));
+#endif
+            var g = new GeoCoord(lat, lon, rad);
+
+            UpdateCurrentUI(e, g);
+        }
+
+        public void ShowScanLoc(GeoCoord? loc)
         {
             scanLoc.Visibility = FakeVisibility.Visible;
-            UpdateCurrentUI(scanLoc, Longitude, Latitude, 1);
+            if (loc.HasValue)
+            {
+                UpdateCurrentUI(scanLoc, loc.Value);
+            }
         }
 
-#if WINDOWS_PHONE || NETFX_CORE
-        public void UpdateCurrent(Geocoordinate coordinate)
+        public void UpdateCurrent(GeoCoord coordinate)
         {
             this.coordinate = coordinate;
             UpdateCurrentUI();
@@ -341,36 +362,23 @@ namespace MeetWhere
             else
             {
                 this.currentLoc.Visibility = FakeVisibility.Visible;
-                UpdateCurrentUI(this.currentLoc, coordinate.Longitude, coordinate.Latitude, coordinate.Accuracy);
+                UpdateCurrentUI(this.currentLoc, coordinate);
             }
         }
-#endif
 
-        private void UpdateCurrentUI(FrameworkElement marker, double Longitude, double Latitude, double Accuracy)
+        private void UpdateCurrentUI(FrameworkElement marker, GeoCoord loc)
         {
-            // Determine the actual size of the geography.
-            // From http://en.wikipedia.org/wiki/Latitude,
-            // and assuming the earth is spherical (e=1)
-            double a = 6378137.0; // Length of equator, in meters
-            var latDegreeSizeInMeters = Math.PI / 180 * a;
-            var lonDegreeSizeInMeters = Math.PI / 180 * a * Math.Cos(Latitude * Math.PI / 180);
             // In terms of pixels, it is 
-            double MetersPerScreenPoint = latDegreeSizeInMeters * geoSize / mapSize;
+            marker.Width = loc.Accuracy / MetersPerScreenPoint;
+            marker.Height = loc.Accuracy / MetersPerScreenPoint;
 
-            marker.Width = Accuracy / MetersPerScreenPoint;
-            marker.Height = Accuracy / MetersPerScreenPoint;
-
-            if (geoSize != 0)
+            var metersOff = geoC.OffsetInMeters(loc);
+            if (zoomLevel != 0)
             {
-                // We ask Bing for a square map, with a "square" range of lat-long.
-                // Because the longitude degree length shrinks, need scale factor
-                double fX2 = (Longitude - geoC.X) / (2 * geoSize);
-                double fY2 = -(Latitude - geoC.Y) / (2 * geoSize * Math.Cos(Latitude * Math.PI / 180));
-                double pX = mapSize * fX2 / 2;
-                double pY = mapSize * fY2 / 2;
-                Canvas.SetLeft(marker, pX - marker.Width / 2);
-                Canvas.SetTop(marker, pY - marker.Height / 2);
+                Canvas.SetLeft(marker, metersOff.X / MetersPerScreenPoint - marker.Width / 2);
+                Canvas.SetTop(marker, metersOff.Y / MetersPerScreenPoint - marker.Height / 2);
             }
         }
+
     }
 }

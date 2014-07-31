@@ -12,24 +12,34 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using System.Threading;
 using MeetWhere.XPlat;
+using Newtonsoft.Json;
 
 #if NETFX_CORE
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.UI.Popups;
 using Windows.UI.ViewManagement;
-using Newtonsoft.Json;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml;
+using Windows.UI.Xaml.Media.Imaging;
 #else
 using System.IO.IsolatedStorage;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 #endif
 #if WINDOWS_PHONE
 using Microsoft.Phone.Controls;
 #endif
 
+#if NETFX_CORE
+using FakeStream = Windows.Storage.Streams.IRandomAccessStream;
+#else
+using FakeStream = System.IO.Stream;
+
+
+#endif
+using MappingBase;
 namespace MeetWhere.Cloud
 {
     static class CloudAccesser
@@ -123,29 +133,92 @@ namespace MeetWhere.Cloud
             await UI.MessageBoxShow((ok ? "Successfully cleaned" : "Error cleaning") + " the cache");
         }
 
+        async static public Task<Stream> LoadMapImage(GeoCoord loc, int zoomLevel, int size)
+        {
+            string fileName = loc + "-" + zoomLevel + "-" + size + ".png";
+            FakeStream content = await Cache.FileStream(foldername, fileName);
+            if (content != null)
+            {
+#if NETFX_CORE
+                return content.AsStream();
+#else
+                return content;
+#endif
+            }
+
+#if NETFX_CORE || WINDOWS_PHONE
+            // Not in cache, so need to access files on server.
+            if (!await TryLogin())
+            {
+                return null;
+            }
+#endif
+
+            // var foo = "centerPoint=" + loc + "&zoomLevel=" + zoomLevel + "&mapSize=" + size + "," + size;
+            var resp = await service.InvokeApiAsync("getmapimage", null, HttpMethod.Get, null, new Dictionary<string, string> {
+                { "centerPoint", loc.ToString()},
+                { "zoomLevel",   zoomLevel.ToString()},
+                { "mapSize" ,    size.ToString() + "," + size.ToString() },
+            });
+            byte[] bytes = await resp.Content.ReadAsByteArrayAsync();
+
+            await Cache.WriteFileContent(foldername, fileName, bytes);
+
+            MemoryStream ms = new MemoryStream(bytes);
+            return ms;
+        }
+
         async static public Task<MapMetadata> LoadMapMetadata(RoomInfo location)
         {
-            var mapMetadataTable = service.GetTable<MapMetadata>();
             MapMetadata y = null;
+            string fileName = location.Building + "-" + location.Floor + ".mapmetadata";
+            string content = await Cache.ReadFileContent(foldername, fileName);
+            if (!string.IsNullOrEmpty(content))
+            {
+                y = (MapMetadata)JsonConvert.DeserializeObject(content, typeof(MapMetadata));
+                return y;
+            }
+
+#if NETFX_CORE || WINDOWS_PHONE
+            // Not in cache, so need to access files on server.
+            if (!await TryLogin())
+            {
+                return null;
+            }
+#endif
+
+            var mapMetadataTable = service.GetTable<MapMetadata>();
             try
             {
                 var x = await mapMetadataTable.Where(p => p.Building == location.Building && p.Floor == location.Floor).ToListAsync();
                 y = x.Where(p => p.Id.HasValue).OrderByDescending(p => p.Id).FirstOrDefault();
+
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
             }
 
+            if (y != null)
+            {
+                // Map is on the server
+                var toCache = JsonConvert.SerializeObject(y, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+                await Cache.WriteFileContent(foldername, fileName, toCache);
+            }
+
             if (y == null)
             {
+                // Look for the next best metadata value. Don't cache thes guess.
                 try
                 {
                     var x = await mapMetadataTable.Where(p => p.Building == location.Building).ToListAsync();
                     y = x.Where(p => p.Id.HasValue).OrderByDescending(p => p.Id).FirstOrDefault();
                     // Need to fix up the fields to make unique
-                    y.Id = null;
-                    y.Floor = location.Floor;
+                    if (y != null)
+                    {
+                        y.Id = null;
+                        y.Floor = location.Floor;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -163,7 +236,7 @@ namespace MeetWhere.Cloud
                     CenterLat = 47.636425,
                     CenterLong = -122.133110,
                     MapSize = 300,
-                    GeoSize = 0.0004,
+                    ZoomLevel = 18,
                     Angle = 90,
                     Scale = 1.53418608096759,
                     OffsetX = -117.849160438776,
@@ -178,6 +251,10 @@ namespace MeetWhere.Cloud
         {
             var mapMetadataTable = service.GetTable<MapMetadata>();
             await mapMetadataTable.InsertAsync(mapMetadata);
+            // Map is on the server
+            string fileName = mapMetadata.Building + "-" + mapMetadata.Floor + ".mapmetadata";
+            var toCache = JsonConvert.SerializeObject(mapMetadata, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+            await Cache.WriteFileContent(foldername, fileName, toCache);
         }
 
         async static public Task<string> LoadMapSvg(RoomInfo location, Action<bool> waiter)
