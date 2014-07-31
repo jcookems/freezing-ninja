@@ -1,0 +1,225 @@
+(***********************************************************************
+
+                    Mathematica-Compatible Notebook
+
+This notebook can be used on any computer system with Mathematica 4.0,
+MathReader 4.0, or any compatible application. The data for the notebook 
+starts with the line containing stars above.
+
+To get the notebook into a Mathematica-compatible application, do one of 
+the following:
+
+* Save the data starting with the line of stars above into a file
+  with a name ending in .nb, then open the file inside the application;
+
+* Copy the data starting with the line of stars above to the
+  clipboard, then use the Paste menu command inside the application.
+
+Data for notebooks contains only printable 7-bit ASCII and can be
+sent directly in email or through ftp in text mode.  Newlines can be
+CR, LF or CRLF (Unix, Macintosh or MS-DOS style).
+
+NOTE: If you modify the data for this notebook not in a Mathematica-
+compatible application, you must delete the line below containing the 
+word CacheID, otherwise Mathematica-compatible applications may try to 
+use invalid cache data.
+
+For more information on notebooks and Mathematica-compatible 
+applications, contact Wolfram Research:
+  web: http://www.wolfram.com
+  email: info@wolfram.com
+  phone: +1-217-398-0700 (U.S.)
+
+Notebook reader applications are available free of charge from 
+Wolfram Research.
+***********************************************************************)
+
+(*CacheID: 232*)
+
+
+(*NotebookFileLineBreakTest
+NotebookFileLineBreakTest*)
+(*NotebookOptionsPosition[      7341,        166]*)
+(*NotebookOutlinePosition[      8247,        195]*)
+(*  CellTagsIndexPosition[      8203,        191]*)
+(*WindowFrame->Normal*)
+
+
+
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Calculating f_n for the cosine integrals.", "Subsubsection"],
+
+Cell["\<\
+This is a more pragmatic way of doing things. First allocate the \
+memory, and the initial conditions. Increase numf for more!\
+\>", "Text"],
+
+Cell[BoxData[{
+    \(\(numf = 10;\)\), "\n", 
+    \(\(ff = Table[0, {numf}];\)\), "\n", 
+    \(\(ff[\([\)\(1\)\(]\)] = 1;\)\), "\n", 
+    \(\(ff[\([\)\(2\)\(]\)] = \(a + m\ c[a]\)\/c[a]\^2;\)\)}], "Input"],
+
+Cell["This is the main iteration work.", "Text"],
+
+Cell[BoxData[
+    \(\(Table[
+        ff[\([n]\)] = 
+          Simplify[\(1\/\(n - 1\)\) \((ff[\([2]\)] ff[\([n - 1]\)] - 
+                    D[ff[\([n - 1]\)], a])\) /. {D[c[a], a] \[Rule] 
+                  a\/c[a]}], {n, 3, Length[ff]}];\)\)], "Input"],
+
+Cell["This is the main formatting work.", "Text"],
+
+Cell[BoxData[{
+    \(Off[Part::"\<partd\>"]\), "\n", 
+    \(Off[Part::"\<pspec\>"]\), "\n", 
+    \(\(fff = 
+        Table[\(\(\(\(Simplify[
+                      N[Expand[\(c\^\(\((n - 1)\)*2\)\) 
+                            ff[\([\)\(n\)\(]\)]]]] /. {c[a] \[Rule] 
+                        c}\) /. {qwer_\^asdf_ \[Rule] 
+                      qwer[asdf]}\) /. {a \[Rule] a[1], c \[Rule] c[1], 
+                  m \[Rule] m[1]}\) /. {\(qwer_[1]\)[asdf_] \[Rule] 
+                  qwer[asdf]}\) /. {qwer_[asdf_] \[Rule] 
+                qwer[\([\)\(asdf\)\(]\)]}, {n, Length[ff]}];\)\)}], "Input"],
+
+Cell["This gets things set up for the output.", "Text"],
+
+Cell[BoxData[{
+    \(\(tmpstr\  = \ "\<\>";\)\), "\[IndentingNewLine]", 
+    \(\(For[j = 1, 
+        j \[LessEqual] Length[fff], \(j++\), \[IndentingNewLine]tmpstr = 
+          tmpstr <> "\<case \>" <> 
+            ToString[j] <> "\<: return \>"; \[IndentingNewLine]If[
+          j \[Equal] 
+            1, \[IndentingNewLine]\(tmpstr = 
+              tmpstr <> "\<1.;\n\>";\), \[IndentingNewLine]\(tmpstr = 
+              tmpstr <> "\<oocsq[\>" <> ToString[j - 1] <> "\<]*(\>" <> 
+                ToString[
+                  CForm[fff[\([j]\)]]] <> "\<);\n\>";\)\[IndentingNewLine]]\
+\[IndentingNewLine]];\)\)}], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(tmpstr\)], "Input"],
+
+Cell[BoxData[
+    \("case 1: return 1.;\ncase 2: return oocsq[1]*(a[1] + c[1]*m[1]);\ncase \
+3: return oocsq[2]*(1.5*a[2] + 1.5*a[1]*c[1]*m[1] + c[2]*(-0.5 + 0.5*m[2]));\n\
+case 4: return oocsq[3]*(2.5*a[3] + 2.5*a[2]*c[1]*m[1] + a[1]*c[2]*(-1.5 + \
+m[2]) + c[3]*(-0.6666666666666666*m[1] + 0.16666666666666666*m[3]));\ncase 5: \
+return oocsq[4]*(4.375*a[4] + 4.375*a[3]*c[1]*m[1] + \
+a[1]*c[3]*m[1]*(-2.2916666666666665 + 0.4166666666666667*m[2]) + \
+a[2]*c[2]*(-3.75 + 1.875*m[2]) + c[4]*(0.375 - 0.4166666666666667*m[2] + \
+0.041666666666666664*m[4]));\ncase 6: return oocsq[5]*(7.875*a[5] + \
+7.875*a[4]*c[1]*m[1] + a[2]*c[3]*m[1]*(-6.125 + 0.875*m[2]) + \
+a[3]*c[2]*(-8.75 + 3.5*m[2]) + a[1]*c[4]*(1.875 - 1.625*m[2] + 0.125*m[4]) + \
+c[5]*(0.5333333333333333*m[1] - 0.16666666666666666*m[3] + \
+0.008333333333333333*m[5]));\ncase 7: return oocsq[6]*(14.4375*a[6] + \
+14.4375*a[5]*c[1]*m[1] + a[3]*c[3]*m[1]*(-14.875 + 1.75*m[2]) + \
+a[4]*c[2]*(-19.6875 + 6.5625*m[2]) + a[1]*c[5]*m[1]*(2.8875 - \
+0.7291666666666666*m[2] + 0.029166666666666667*m[4]) + a[2]*c[4]*(6.5625 - \
+4.666666666666667*m[2] + 0.2916666666666667*m[4]) + c[6]*(-0.3125 + \
+0.3597222222222222*m[2] - 0.04861111111111111*m[4] + \
+0.001388888888888889*m[6]));\ncase 8: return oocsq[7]*(26.8125*a[7] + \
+26.8125*a[6]*c[1]*m[1] + a[4]*c[3]*m[1]*(-34.375 + 3.4375*m[2]) + \
+a[5]*c[2]*(-43.3125 + 12.375*m[2]) + a[2]*c[5]*m[1]*(10.6125 - 2.25*m[2] + \
+0.075*m[4]) + a[3]*c[4]*(19.6875 - 11.875*m[2] + 0.625*m[4]) + \
+a[1]*c[6]*(-2.1875 + 2.1055555555555556*m[2] - 0.2361111111111111*m[4] + \
+0.005555555555555556*m[6]) + c[7]*(-0.45714285714285713*m[1] + \
+0.15555555555555556*m[3] - 0.011111111111111112*m[5] + \
+0.0001984126984126984*m[7]));\ncase 9: return oocsq[8]*(50.2734375*a[8] + \
+50.2734375*a[7]*c[1]*m[1] + a[5]*c[3]*m[1]*(-77.0859375 + 6.703125*m[2]) + \
+a[6]*c[2]*(-93.84375 + 23.4609375*m[2]) + a[3]*c[5]*m[1]*(32.9140625 - \
+6.015625*m[2] + 0.171875*m[4]) + a[4]*c[4]*(54.140625 - 28.359375*m[2] + \
+1.2890625*m[4]) + a[1]*c[7]*m[1]*(-3.383705357142857 + 0.98125*m[2] - \
+0.059375*m[4] + 0.0008928571428571428*m[6]) + a[2]*c[6]*(-9.84375 + \
+8.1484375*m[2] - 0.78125*m[4] + 0.015625*m[6]) + c[8]*(0.2734375 - \
+0.3203373015873016*m[2] + 0.04895833333333333*m[4] - \
+0.0020833333333333333*m[6] + 0.0000248015873015873*m[8]));\ncase 10: return \
+oocsq[9]*(94.9609375*a[9] + 94.9609375*a[8]*c[1]*m[1] + \
+a[6]*c[3]*m[1]*(-169.44010416666666 + 13.033854166666666*m[2]) + \
+a[7]*c[2]*(-201.09375 + 44.6875*m[2]) + a[4]*c[5]*m[1]*(92.7265625 - \
+14.895833333333334*m[2] + 0.3723958333333333*m[4]) + a[5]*c[4]*(140.765625 - \
+65.16927083333333*m[2] + 2.6067708333333335*m[4]) + \
+a[2]*c[7]*m[1]*(-15.824776785714286 + 4.000868055555555*m[2] - \
+0.21006944444444445*m[4] + 0.002728174603174603*m[6]) + a[3]*c[6]*(-36.09375 \
++ 26.22048611111111*m[2] - 2.1961805555555554*m[4] + \
+0.03819444444444445*m[6]) + a[1]*c[8]*(2.4609375 - 2.5070684523809526*m[2] + \
+0.3315972222222222*m[4] - 0.012152777777777778*m[6] + \
+0.0001240079365079365*m[8]) + c[9]*(0.40634920634920635*m[1] - \
+0.14462081128747795*m[3] + 0.012037037037037037*m[5] - \
+0.00033068783068783067*m[7] + 2.7557319223985893e-6*m[9]));\n"\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[{
+    \(\(SetDirectory["\</home/jrcooke/c\>"];\)\), "\n", 
+    \(\(stmp = 
+        OpenWrite["\<cos.int.TEMP.tmp\>"];\)\), "\[IndentingNewLine]", 
+    \(\(WriteString[stmp, tmpstr];\)\), "\n", 
+    \(\(Close[stmp];\)\)}], "Input"]
+}, Open  ]]
+},
+FrontEndVersion->"4.0 for X",
+ScreenRectangle->{{0, 1152}, {0, 864}},
+WindowSize->{809, 724},
+WindowMargins->{{24, Automatic}, {Automatic, 9}},
+PrintingPageRange->{Automatic, Automatic},
+PrintingOptions->{"PaperSize"->{612, 792},
+"PaperOrientation"->"Portrait",
+"PostScriptOutputFile":>FrontEnd`FileName[{$RootDirectory, "home", \
+"jrcooke"}, "joo.nb.ps", CharacterEncoding -> "ISO8859-1"],
+"Magnification"->1}
+]
+
+
+(***********************************************************************
+Cached data follows.  If you edit this Notebook file directly, not using
+Mathematica, you must remove the line containing CacheID at the top of 
+the file.  The cache data will then be recreated when you save this file 
+from within Mathematica.
+***********************************************************************)
+
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+
+(*NotebookFileOutline
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[1739, 51, 66, 0, 42, "Subsubsection"],
+Cell[1808, 53, 150, 3, 32, "Text"],
+Cell[1961, 58, 205, 4, 95, "Input"],
+Cell[2169, 64, 48, 0, 32, "Text"],
+Cell[2220, 66, 255, 5, 66, "Input"],
+Cell[2478, 73, 49, 0, 32, "Text"],
+Cell[2530, 75, 597, 11, 134, "Input"],
+Cell[3130, 88, 55, 0, 32, "Text"],
+Cell[3188, 90, 622, 12, 139, "Input"],
+
+Cell[CellGroupData[{
+Cell[3835, 106, 39, 1, 27, "Input"],
+Cell[3877, 109, 3190, 46, 635, "Output"]
+}, Open  ]],
+Cell[7082, 158, 243, 5, 75, "Input"]
+}, Open  ]]
+}
+]
+*)
+
+
+
+
+(***********************************************************************
+End of Mathematica Notebook file.
+***********************************************************************)
+

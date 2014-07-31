@@ -1,0 +1,12 @@
+﻿Build started 23/04/34 05:16:30 م.
+     1>Project "C:\Users\jcooke\Desktop\freezing-ninja\CosInt\ConsoleApplication1\ConsoleApplication1.vcxproj" on node 3 (Build target(s)).
+     1>RestorePackages:
+         "C:\Users\jcooke\Desktop\freezing-ninja\CosInt\.nuget\nuget.exe" install "C:\Users\jcooke\Desktop\freezing-ninja\CosInt\ConsoleApplication1\packages.config" -source ""  -RequireConsent -solutionDir "C:\Users\jcooke\Desktop\freezing-ninja\CosInt\ "
+         All packages listed in packages.config are already installed.
+       Link:
+         ConsoleApplication1.vcxproj -> C:\Users\jcooke\Desktop\freezing-ninja\CosInt\Release\ConsoleApplication1.exe
+     1>Done Building Project "C:\Users\jcooke\Desktop\freezing-ninja\CosInt\ConsoleApplication1\ConsoleApplication1.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.97

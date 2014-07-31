@@ -1,0 +1,1014 @@
+(***********************************************************************
+
+                    Mathematica-Compatible Notebook
+
+This notebook can be used on any computer system with Mathematica 3.0,
+MathReader 3.0, or any compatible application. The data for the notebook 
+starts with the line of stars above.
+
+To get the notebook into a Mathematica-compatible application, do one of 
+the following:
+
+* Save the data starting with the line of stars above into a file
+  with a name ending in .nb, then open the file inside the application;
+
+* Copy the data starting with the line of stars above to the
+  clipboard, then use the Paste menu command inside the application.
+
+Data for notebooks contains only printable 7-bit ASCII and can be
+sent directly in email or through ftp in text mode.  Newlines can be
+CR, LF or CRLF (Unix, Macintosh or MS-DOS style).
+
+NOTE: If you modify the data for this notebook not in a Mathematica-
+compatible application, you must delete the line below containing the 
+word CacheID, otherwise Mathematica-compatible applications may try to 
+use invalid cache data.
+
+For more information on notebooks and Mathematica-compatible 
+applications, contact Wolfram Research:
+  web: http://www.wolfram.com
+  email: info@wolfram.com
+  phone: +1-217-398-0700 (U.S.)
+
+Notebook reader applications are available free of charge from 
+Wolfram Research.
+***********************************************************************)
+
+(*CacheID: 232*)
+
+
+(*NotebookFileLineBreakTest
+NotebookFileLineBreakTest*)
+(*NotebookOptionsPosition[     22387,        849]*)
+(*NotebookOutlinePosition[     23160,        876]*)
+(*  CellTagsIndexPosition[     23116,        872]*)
+(*WindowFrame->Normal*)
+
+
+
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+    \(ttt = 
+      \(1\/\(2  \[Pi]\)\) 
+        \(\[Integral]\_0\%\(2  \[Pi]\)\(1\/\(a + Cos[\[Phi]]\)\) 
+            \(1\/\(b + Cos[\[Phi] + \[Theta]]\)\) 
+            \[DifferentialD]\[Phi]\)\)], "Input"],
+
+Cell[BoxData[
+    \(Integrate::"gener" \( : \ \) "Unable to check convergence"\)], "Message"],
+
+Cell[BoxData[
+    \(0\)], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(step1 = 
+      \(1\/\(2  \[Pi]\)\) 
+        \(\[Integral]\_0
+            \%\(2  \[Pi]\)\(1\/\(1 + b\ Sin[\[Phi]] + a\ Cos[\[Phi]]\)\) 
+            \(1\/\(1 + \ B\ Sin[\[Phi]] + A\ Cos[\[Phi]]\)\) 
+            \[DifferentialD]\[Phi]\)\)], "Input"],
+
+Cell[BoxData[
+    \(I\ \((
+        \(-\(\(I\ \((
+                    1 + \((b - 
+                              I\ \@\(-
+                                    \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\) + 
+                              I\ a\ \@\(-
+                                    \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\))\)\^2
+                          \/\((\(-1\) + a)\)\^2)\)\)\/\(\((\(-1\) + a)\)\ 
+                  \@\(-\(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2\)\)\ 
+                  \((\(-1\) - A - 
+                      \((b - I\ \@\(-
+                                    \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\) + 
+                              I\ a\ \@\(-
+                                    \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\))\)\^2
+                          \/\((\(-1\) + a)\)\^2 + 
+                      \(A\ \((b - 
+                                I\ \@\(-
+                                      \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\) + 
+                                I\ a\ \@\(-
+                                      \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\))\)\^2
+                            \)\/\((\(-1\) + a)\)\^2 - 
+                      \(2\ \((
+                            b - I\ \@\(-
+                                    \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\) + 
+                              I\ a\ \@\(-
+                                    \(\(\(-1\) + a\^2 + 
+                                        b\^2\)\/\((\(-1\) + a)\)\^2\)\))\)\ B
+                          \)\/\(\(-1\) + a\))\)\)\)\) - 
+          \(I\ \((1 + 
+                  \((B - I\ \@\(-
+                                \(\(\(-1\) + A\^2 + 
+                                      B\^2\)\/\((\(-1\) + A)\)\^2\)\) + 
+                          I\ A\ \@\(-
+                                \(\(\(-1\) + A\^2 + 
+                                      B\^2\)\/\((\(-1\) + A)\)\^2\)\))\)\^2
+                      \/\((\(-1\) + A)\)\^2)\)\)\/\(\((\(-1\) + A)\)\ 
+              \@\(-\(\(\(-1\) + A\^2 + B\^2\)\/\((\(-1\) + A)\)\^2\)\)\ 
+              \((\(-1\) - a - 
+                  \(2\ b\ \((
+                        B - I\ \@\(-
+                                \(\(\(-1\) + A\^2 + 
+                                      B\^2\)\/\((\(-1\) + A)\)\^2\)\) + 
+                          I\ A\ \@\(-
+                                \(\(\(-1\) + A\^2 + 
+                                      B\^2\)\/\((\(-1\) + A)\)\^2\)\))
+                        \)\)\/\(\(-1\) + A\) - 
+                  \((B - I\ \@\(-
+                                \(\(\(-1\) + A\^2 + 
+                                      B\^2\)\/\((\(-1\) + A)\)\^2\)\) + 
+                          I\ A\ \@\(-
+                                \(\(\(-1\) + A\^2 + 
+                                      B\^2\)\/\((\(-1\) + A)\)\^2\)\))\)\^2
+                      \/\((\(-1\) + A)\)\^2 + 
+                  \(a\ \((B - 
+                            I\ \@\(-
+                                  \(\(\(-1\) + A\^2 + 
+                                        B\^2\)\/\((\(-1\) + A)\)\^2\)\) + 
+                            I\ A\ \@\(-
+                                  \(\(\(-1\) + A\^2 + 
+                                        B\^2\)\/\((\(-1\) + A)\)\^2\)\))\)\^2
+                        \)\/\((\(-1\) + A)\)\^2)\)\))\)\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+    \(tester = {a \[Rule] 0.442, b \[Rule] 0.1, A \[Rule] 0.3, 
+        B \[Rule] 0.01}; \n
+    rever = {a \[Rule] A, A \[Rule] a, b \[Rule] B, B \[Rule] b}; \)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(Chop[step1 /. tester]\)], "Input"],
+
+Cell[BoxData[
+    \(1.26412412297517651`\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+    \(\(step2 = 
+      \(\ 1 + \((
+                b - I\ \@\(-
+                        \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2\)\) + 
+                  I\ a\ \@\(-
+                        \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2\)\))
+                \)\^2\/\((\(-1\) + a)\)\^2\)\/\(\((\(-1\) + a)\)\ 
+          \@\(-\(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2\)\)\ 
+          \((\(-1\) - A - 
+              \((b - I\ \@\(-
+                            \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2
+                                  \)\) + 
+                      I\ a\ \@\(-
+                            \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2
+                                  \)\))\)\^2\/\((\(-1\) + a)\)\^2 + 
+              \(A\ \((b - 
+                        I\ \@\(-
+                              \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2
+                                    \)\) + 
+                        I\ a\ \@\(-
+                              \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2
+                                    \)\))\)\^2\)\/\((\(-1\) + a)\)\^2 - 
+              \(2\ \((b - 
+                      I\ \@\(-
+                            \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2
+                                  \)\) + 
+                      I\ a\ \@\(-
+                            \(\(\(-1\) + a\^2 + b\^2\)\/\((\(-1\) + a)\)\^2
+                                  \)\))\)\ B\)\/\(\(-1\) + a\))\)\); \)\)], 
+  "Input"],
+
+Cell[BoxData[
+    \(testit[t_] := 
+      Chop[\((t /. tester)\) + \((\(t /. rever\) /. tester)\)]\)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(testit[step2]\)], "Input"],
+
+Cell[BoxData[
+    \(1.26412412297517651`\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+    \(\(\ \(step3 = 
+      \(\ \((a - 1)\)\^2 + 
+          \((b + Sign[a - 1]\ I\ \@\(1 - \((a\^2 + b\^2)\)\))\)\^2\)\/\(Sign[
+            a - 1]\ \@\(1 - \((a\^2 + b\^2)\)\)\ 
+          \((\(-\((a - 1)\)\^2\) \((1 + A)\) + 
+              \((A - 1)\) 
+                \((b + Sign[a - 1]\ I\ \@\(1 - \((a\^2 + b\^2)\)\))\)\^2 - 
+              2\ B \((a - 1)\)\ 
+                \((b + Sign[a - 1]\ I\ \@\(1 - \((a\^2 + b\^2)\)\))\)\ )\)\); 
+    \)\)\)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(testit[step3]\)], "Input"],
+
+Cell[BoxData[
+    \(1.26412412297517806`\)], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(temp = 
+      Simplify[Expand[
+            \(-\((a - 1)\)\^2\) \((1 + A)\) + 
+              \((A - 1)\) 
+                \((b + Sign[a - 1]\ I\ \@\(1 - \((a\^2 + b\^2)\)\))\)\^2 - 
+              2\ B \((a - 1)\)\ 
+                \((b + Sign[a - 1]\ I\ \@\(1 - \((a\^2 + b\^2)\)\))\)] /. {
+            Sign[\(-1\) + a]\^2 \[Rule] 1}]\)], "Input"],
+
+Cell[BoxData[
+    \(\(-2\)\ 
+      \((a\^2 + A + b\^2 - A\ b\^2 - b\ B - a\ \((1 + A - b\ B)\) + 
+          I\ \@\(1 - a\^2 - b\^2\)\ \((b - A\ b + \((\(-1\) + a)\)\ B)\)\ 
+            Sign[\(-1\) + a])\)\)], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(tempstar = temp\  /. {I \[Rule] \(-I\)}\)], "Input"],
+
+Cell[BoxData[
+    \(\(-2\)\ 
+      \((a\^2 + A + b\^2 - A\ b\^2 - b\ B - a\ \((1 + A - b\ B)\) - 
+          I\ \@\(1 - a\^2 - b\^2\)\ \((b - A\ b + \((\(-1\) + a)\)\ B)\)\ 
+            Sign[\(-1\) + a])\)\)], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(newdenom = 
+      Simplify[Expand[temp\ tempstar] /. {Sign[\(-1\) + a]\^2 \[Rule] 1}]\)], 
+  "Input"],
+
+Cell[BoxData[
+    \(\(-4\)\ \((\(-1\) + a)\)\^2\ 
+      \((A\^2\ \((\(-1\) + b\^2)\) - \((b - B)\)\^2 - 
+          2\ a\ A\ \((\(-1\) + b\ B)\) + a\^2\ \((\(-1\) + B\^2)\))\)\)], 
+  "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(newnum = \ 
+      Simplify[Expand[
+            \((\((a - 1)\)\^2 + 
+                  \((b + Sign[a - 1]\ I\ \@\(1 - \((a\^2 + b\^2)\)\))\)\^2)\) 
+              tempstar] /. {Sign[\(-1\) + a]\^2 \[Rule] 1, 
+            Sign[\(-1\) + a]\^3 \[Rule] Sign[\(-1\) + a]}]\)], "Input"],
+
+Cell[BoxData[
+    \(\(-4\)\ \((\(-1\) + a)\)\^2\ 
+      \((a\^2 - a\ A + b\ \((b - B)\) + 
+          I\ \@\(1 - a\^2 - b\^2\)\ \((A\ b - a\ B)\)\ Sign[\(-1\) + a])
+        \)\)], "Output"]
+}, Open  ]],
+
+Cell["Combining these,", "Text"],
+
+Cell[BoxData[
+    \(\(\ \(step4 = 
+      \(\ a\^2 - a\ A + b\ \((b - B)\) + 
+          I\ \@\(1 - a\^2 - b\^2\)\ \((A\ b - a\ B)\)\ 
+            Sign[\(-1\) + a]\)\/\(Sign[a - 1]\ \@\(1 - \((a\^2 + b\^2)\)\)\ \ 
+          \((A\^2\ \((\(-1\) + b\^2)\) - \((b - B)\)\^2 - 
+              2\ a\ A\ \((\(-1\) + b\ B)\) + a\^2\ \((\(-1\) + B\^2)\))\)\); 
+    \)\)\)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(testit[step4]\)], "Input"],
+
+Cell[BoxData[
+    \(1.2641241229751754`\)], "Output"]
+}, Open  ]],
+
+Cell[TextData[
+"Notet hat the denominator is invariant under \
+(caps)\[LeftRightArrow](lowercase), so we combine these by hand to get"], 
+  "Text"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(Simplify[step4 + \((step4\  /. \ rever)\)]\)], "Input"],
+
+Cell[BoxData[
+    \(\(\(\((\(-a\)\ A + A\^2 - b\ B + B\^2)\)\ 
+            Sign[\(-1\) + a]\)\/\@\(1 - A\^2 - B\^2\) + 
+        \(\((a\^2 - a\ A + b\ \((b - B)\))\)\ 
+            Sign[\(-1\) + A]\)\/\@\(1 - a\^2 - b\^2\)\)\/\(\((
+          A\^2\ \((\(-1\) + b\^2)\) - \((b - B)\)\^2 - 
+            2\ a\ A\ \((\(-1\) + b\ B)\) + a\^2\ \((\(-1\) + B\^2)\))\)\ 
+        Sign[\(-1\) + a]\ Sign[\(-1\) + A]\)\)], "Output"]
+}, Open  ]],
+
+Cell["The imaginary part disappears as it has to.", "Text"],
+
+Cell[BoxData[
+    \(\(ans = 
+      \(1\/\(\((A\^2\ \((\(-1\) + b\^2)\) - \((b - B)\)\^2 - 
+                  2\ a\ A\ \((\(-1\) + b\ B)\) + a\^2\ \((\(-1\) + B\^2)\))
+                \)\ Sign[\(-1\) + a]\ Sign[\(-1\) + A]\)\) 
+        \((\(\((\(-a\)\ A + A\^2 - b\ B + B\^2)\)\ 
+                Sign[\(-1\) + a]\)\/\@\(1 - A\^2 - B\^2\) + 
+            \(\((a\^2 - a\ A + b\ \((b - B)\))\)\ 
+                Sign[\(-1\) + A]\)\/\@\(1 - a\^2 - b\^2\))\); \)\)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(ans\  /. \ tester\)], "Input"],
+
+Cell[BoxData[
+    \(1.26412412297517584`\)], "Output"]
+}, Open  ]],
+
+Cell[TextData[{
+  "so that the total integral is, after noting that ",
+  Cell[BoxData[
+      \(TraditionalForm\`\(-1\) < a, A < 1\)]],
+  "(so that the integral converges), so that ",
+  Cell[BoxData[
+      \(TraditionalForm\`Sign[A - 1] = \(-1\)\)]],
+  ","
+}], "Text"],
+
+Cell[BoxData[
+    \(\(totint[a_, b_, A_, B_] := 
+      \(1\/\(\((a - A)\)\^2 + \((b - B)\)\^2 - \((A\ b\  - \ B\ a)\)\^2\)\) 
+        \((\(A \((A - a)\) + B \((B - b\ )\)\)\/\@\(1 - A\^2 - B\^2\) + 
+            \(a \((a - A)\) + b\ \((b - B)\)\)\/\@\(1 - a\^2 - b\^2\))\); 
+    \)\)], "Input"],
+
+Cell["This looks nice enough to be the right answer.", "Text"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(totint[a, b, A, B]\  /. \ tester\)], "Input"],
+
+Cell[BoxData[
+    \(1.26412412297517651`\)], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(\(Plot[
+      \(1\/\(1 + 0.2  Cos[\[Phi]]\)\) 
+        1\/\(1 + \ 0.1  Sin[\[Phi]] + 0.3  Cos[\[Phi]]\), {\[Phi], 0, 
+        2  \[Pi]}]; \)\)], "Input"],
+
+Cell[GraphicsData["PostScript", "\<\
+%!
+%%Creator: Mathematica
+%%AspectRatio: .61803 
+MathPictureStart
+/Mabs {
+Mgmatrix idtransform
+Mtmatrix dtransform
+} bind def
+/Mabsadd { Mabs
+3 -1 roll add
+3 1 roll add
+exch } bind def
+%% Graphics
+%%IncludeResource: font Courier
+%%IncludeFont: Courier
+/Courier findfont 10  scalefont  setfont
+% Scaling calculations
+0.0238095 0.151576 -0.303645 0.50029 [
+[.17539 .18414 -3 -9 ]
+[.17539 .18414 3 0 ]
+[.32696 .18414 -3 -9 ]
+[.32696 .18414 3 0 ]
+[.47854 .18414 -3 -9 ]
+[.47854 .18414 3 0 ]
+[.63011 .18414 -3 -9 ]
+[.63011 .18414 3 0 ]
+[.78169 .18414 -3 -9 ]
+[.78169 .18414 3 0 ]
+[.93327 .18414 -3 -9 ]
+[.93327 .18414 3 0 ]
+[.01131 .09659 -18 -4.5 ]
+[.01131 .09659 0 4.5 ]
+[.01131 .2967 -18 -4.5 ]
+[.01131 .2967 0 4.5 ]
+[.01131 .39676 -18 -4.5 ]
+[.01131 .39676 0 4.5 ]
+[.01131 .49682 -18 -4.5 ]
+[.01131 .49682 0 4.5 ]
+[.01131 .59688 -18 -4.5 ]
+[.01131 .59688 0 4.5 ]
+[ 0 0 0 0 ]
+[ 1 .61803 0 0 ]
+] MathScale
+% Start of Graphics
+1 setlinecap
+1 setlinejoin
+newpath
+0 g
+.25 Mabswid
+[ ] 0 setdash
+.17539 .19664 m
+.17539 .20289 L
+s
+[(1)] .17539 .18414 0 1 Mshowa
+.32696 .19664 m
+.32696 .20289 L
+s
+[(2)] .32696 .18414 0 1 Mshowa
+.47854 .19664 m
+.47854 .20289 L
+s
+[(3)] .47854 .18414 0 1 Mshowa
+.63011 .19664 m
+.63011 .20289 L
+s
+[(4)] .63011 .18414 0 1 Mshowa
+.78169 .19664 m
+.78169 .20289 L
+s
+[(5)] .78169 .18414 0 1 Mshowa
+.93327 .19664 m
+.93327 .20289 L
+s
+[(6)] .93327 .18414 0 1 Mshowa
+.125 Mabswid
+.05412 .19664 m
+.05412 .20039 L
+s
+.08444 .19664 m
+.08444 .20039 L
+s
+.11476 .19664 m
+.11476 .20039 L
+s
+.14507 .19664 m
+.14507 .20039 L
+s
+.2057 .19664 m
+.2057 .20039 L
+s
+.23602 .19664 m
+.23602 .20039 L
+s
+.26633 .19664 m
+.26633 .20039 L
+s
+.29665 .19664 m
+.29665 .20039 L
+s
+.35728 .19664 m
+.35728 .20039 L
+s
+.38759 .19664 m
+.38759 .20039 L
+s
+.41791 .19664 m
+.41791 .20039 L
+s
+.44822 .19664 m
+.44822 .20039 L
+s
+.50885 .19664 m
+.50885 .20039 L
+s
+.53917 .19664 m
+.53917 .20039 L
+s
+.56948 .19664 m
+.56948 .20039 L
+s
+.5998 .19664 m
+.5998 .20039 L
+s
+.66043 .19664 m
+.66043 .20039 L
+s
+.69074 .19664 m
+.69074 .20039 L
+s
+.72106 .19664 m
+.72106 .20039 L
+s
+.75138 .19664 m
+.75138 .20039 L
+s
+.81201 .19664 m
+.81201 .20039 L
+s
+.84232 .19664 m
+.84232 .20039 L
+s
+.87264 .19664 m
+.87264 .20039 L
+s
+.90295 .19664 m
+.90295 .20039 L
+s
+.96358 .19664 m
+.96358 .20039 L
+s
+.9939 .19664 m
+.9939 .20039 L
+s
+.25 Mabswid
+0 .19664 m
+1 .19664 L
+s
+.02381 .09659 m
+.03006 .09659 L
+s
+[(0.8)] .01131 .09659 1 0 Mshowa
+.02381 .2967 m
+.03006 .2967 L
+s
+[(1.2)] .01131 .2967 1 0 Mshowa
+.02381 .39676 m
+.03006 .39676 L
+s
+[(1.4)] .01131 .39676 1 0 Mshowa
+.02381 .49682 m
+.03006 .49682 L
+s
+[(1.6)] .01131 .49682 1 0 Mshowa
+.02381 .59688 m
+.03006 .59688 L
+s
+[(1.8)] .01131 .59688 1 0 Mshowa
+.125 Mabswid
+.02381 .02154 m
+.02756 .02154 L
+s
+.02381 .04656 m
+.02756 .04656 L
+s
+.02381 .07157 m
+.02756 .07157 L
+s
+.02381 .1216 m
+.02756 .1216 L
+s
+.02381 .14662 m
+.02756 .14662 L
+s
+.02381 .17163 m
+.02756 .17163 L
+s
+.02381 .22166 m
+.02756 .22166 L
+s
+.02381 .24667 m
+.02756 .24667 L
+s
+.02381 .27169 m
+.02756 .27169 L
+s
+.02381 .32172 m
+.02756 .32172 L
+s
+.02381 .34673 m
+.02756 .34673 L
+s
+.02381 .37175 m
+.02756 .37175 L
+s
+.02381 .42177 m
+.02756 .42177 L
+s
+.02381 .44679 m
+.02756 .44679 L
+s
+.02381 .4718 m
+.02756 .4718 L
+s
+.02381 .52183 m
+.02756 .52183 L
+s
+.02381 .54685 m
+.02756 .54685 L
+s
+.02381 .57186 m
+.02756 .57186 L
+s
+.25 Mabswid
+.02381 0 m
+.02381 .61803 L
+s
+0 0 m
+1 0 L
+1 .61803 L
+0 .61803 L
+closepath
+clip
+newpath
+.5 Mabswid
+.02381 .01705 m
+.02846 .01636 L
+.03279 .01582 L
+.03754 .01535 L
+.04018 .01515 L
+.04262 .015 L
+.04518 .01487 L
+.04652 .01482 L
+.04795 .01478 L
+.04919 .01475 L
+.05035 .01473 L
+.05163 .01472 L
+.05234 .01472 L
+.053 .01472 L
+.0542 .01472 L
+.05531 .01474 L
+.05654 .01476 L
+.05784 .01479 L
+.06026 .01488 L
+.06244 .01499 L
+.06508 .01515 L
+.06787 .01537 L
+.07287 .01586 L
+.07824 .01656 L
+.08414 .0175 L
+.09471 .0197 L
+.10458 .02233 L
+.12493 .02956 L
+.14349 .03836 L
+.18333 .06478 L
+.22166 .10083 L
+.26245 .15193 L
+.30171 .21436 L
+.33946 .28617 L
+.37967 .37218 L
+.41835 .45725 L
+.438 .49781 L
+.45949 .53735 L
+.48025 .56849 L
+.4893 .57934 L
+.49912 .58898 L
+.50437 .59317 L
+.5092 .59641 L
+.51412 .59908 L
+.51873 .601 L
+.52106 .60176 L
+.52357 .6024 L
+.525 .6027 L
+.52636 .60292 L
+.52758 .60308 L
+Mistroke
+.5289 .60321 L
+.52964 .60326 L
+.53032 .60329 L
+.53161 .60332 L
+.53233 .60331 L
+.533 .6033 L
+.53373 .60327 L
+.53449 .60322 L
+.53577 .6031 L
+.53697 .60294 L
+.53968 .60245 L
+.54229 .60179 L
+.5447 .60102 L
+.55016 .59868 L
+.55497 .59595 L
+.56007 .5924 L
+.5689 .58467 L
+.57864 .57395 L
+.59802 .54641 L
+.61889 .50916 L
+.66009 .42147 L
+.69976 .33231 L
+.73792 .25257 L
+.77854 .17998 L
+.81763 .12383 L
+.85918 .07845 L
+.88003 .06078 L
+.89922 .04729 L
+.91757 .03672 L
+.93774 .02762 L
+.94733 .02416 L
+.95762 .02107 L
+.97619 .01705 L
+Mfstroke
+% End of Graphics
+MathPictureEnd
+\
+\>"], "Graphics",
+  ImageSize->{288, 177.938},
+  ImageMargins->{{43, 0}, {0, 0}},
+  ImageRegion->{{0, 1}, {0, 1}},
+  ImageCacheValid->False,
+  ImageRangeCache->{{{91.5625, 320.938}, {249.938, 108.625}} -> {-3.29762, 
+  1.57365, 0.0242737, 0.00735436}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(NIntegrate[
+      \(1\/\(2  \[Pi]\)\) \(1\/\(1 + 0.2  Cos[\[Phi]]\)\) 
+        1\/\(1 + 0.3  Cos[\[Phi]] + \ 0.1  Sin[\[Phi]]\), {\[Phi], 0, 
+        2  \[Pi]}]\)], "Input"],
+
+Cell[BoxData[
+    \(1.10975957206047493`\)], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(totint[0.2, 0, 0.3, 0.1]\)], "Input"],
+
+Cell[BoxData[
+    \(1.10975957206047159`\)], "Output"]
+}, Open  ]],
+
+Cell["Yippy!", "Text"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(tookie = 
+      totint[r\ Cos[\[Phi]], r\ Sin[\[Phi]], R\ Cos[\[CapitalPhi]], 
+        R\ Sin[\[CapitalPhi]]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(\(r\ Cos[\[Phi]]\ \((r\ Cos[\[Phi]] - R\ Cos[\[CapitalPhi]])\) + 
+            r\ Sin[\[Phi]]\ 
+              \((r\ Sin[\[Phi]] - R\ Sin[\[CapitalPhi]])\)\)\/\@\(1 - 
+              r\^2\ Cos[\[Phi]]\^2 - r\^2\ Sin[\[Phi]]\^2\) + 
+        \(R\ Cos[\[CapitalPhi]]\ 
+              \((\(-r\)\ Cos[\[Phi]] + R\ Cos[\[CapitalPhi]])\) + 
+            R\ Sin[\[CapitalPhi]]\ 
+              \((\(-r\)\ Sin[\[Phi]] + R\ Sin[\[CapitalPhi]])\)\)\/\@\(1 - 
+              R\^2\ Cos[\[CapitalPhi]]\^2 - 
+              R\^2\ Sin[\[CapitalPhi]]\^2\)\)\/\(\((
+            r\ Cos[\[Phi]] - R\ Cos[\[CapitalPhi]])\)\^2 + 
+        \((r\ Sin[\[Phi]] - R\ Sin[\[CapitalPhi]])\)\^2 - 
+        \((r\ R\ Cos[\[CapitalPhi]]\ Sin[\[Phi]] - 
+              r\ R\ Cos[\[Phi]]\ Sin[\[CapitalPhi]])\)\^2\)\)], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(Simplify[%]\)], "Input"],
+
+Cell[BoxData[
+    \(\(\(2\ r\^2\)\/\@\(1 - r\^2\) + \(2\ R\^2\)\/\@\(1 - R\^2\) + 
+        r\ R\ \((\(-\(2\/\@\(1 - r\^2\)\)\) - 2\/\@\(1 - R\^2\))\)\ 
+          Cos[\[Phi] - \[CapitalPhi]]\)\/\(2\ r\^2 + 2\ R\^2 - r\^2\ R\^2 + 
+        r\^2\ R\^2\ Cos[2\ \[Phi] - 2\ \[CapitalPhi]] - 
+        4\ r\ R\ Cos[\[Phi] - \[CapitalPhi]]\)\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+    \(\(2\/\(2\ \((r - R)\)\^2 - 
+            r\^2\ \(R\^2\) \((1 - Cos[2\ \[Phi] - 2\ \[CapitalPhi]])\) + 
+            4\ r\ R \((1 - \ Cos[\[Phi] - \[CapitalPhi]])\)\)\) 
+      \((\(r \((r - \ R\ Cos[\[Phi] - \[CapitalPhi]])\)\)\/\@\(1 - r\^2\) + 
+          \(R \((R - r\ Cos[\[Phi] - \[CapitalPhi]])\)\)\/\@\(1 - R\^2\)\ )
+        \)\)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(TrigExpand[1 - Cos[2  \[Theta]]]\)], "Input"],
+
+Cell[BoxData[
+    \(1 - Cos[\[Theta]]\^2 + Sin[\[Theta]]\^2\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+    \(2  Sin[\[Theta]]\^2\)], "Input"],
+
+Cell[BoxData[
+    \(\(1\/\(\((r - R)\)\^2 - 
+            r\^2\ \(R\^2\) Sin[\ \[Phi] - \ \[CapitalPhi]]\^2 + 
+            r\ R \((1 - \ Cos[\[Phi] - \[CapitalPhi]])\)\)\) 
+      \((\(r \((r - \ R\ Cos[\[Phi] - \[CapitalPhi]])\)\)\/\@\(1 - r\^2\) + 
+          \(R \((R - r\ Cos[\[Phi] - \[CapitalPhi]])\)\)\/\@\(1 - R\^2\)\ )
+        \)\)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(Simplify[tookie /. {\[CapitalPhi] \[Rule] 0}]\)], "Input"],
+
+Cell[BoxData[
+    \(\(\(R\ \((R - r\ Cos[\[Phi]])\)\)\/\@\(1 - R\^2\) + 
+        \(r\ \((r - R\ Cos[\[Phi]])\)\)\/\@\(1 - r\^2\)\)\/\(\((
+            R - r\ Cos[\[Phi]])\)\^2 + r\^2\ Sin[\[Phi]]\^2 - 
+        r\^2\ R\^2\ Sin[\[Phi]]\^2\)\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+    \(\(1\/\(\((R - r\ Cos[\[Phi]])\)\^2 + 
+            r\^2\ \(Sin[\[Phi]]\^2\) \((1 - \ R\^2)\)\)\) 
+      \((\(R\ \((R - r\ Cos[\[Phi]])\)\)\/\@\(1 - R\^2\) + 
+          \(r\ \((r - R\ Cos[\[Phi]])\)\)\/\@\(1 - r\^2\))\)\)], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+    \(Expand[
+      \((R - r\ Cos[\[Phi]])\)\^2 + r\^2\ \(Sin[\[Phi]]\^2\) \((1 - \ R\^2)\)]
+      \)], "Input"],
+
+Cell[BoxData[
+    \(R\^2 - 2\ r\ R\ Cos[\[Phi]] + r\^2\ Cos[\[Phi]]\^2 + 
+      r\^2\ Sin[\[Phi]]\^2 - r\^2\ R\^2\ Sin[\[Phi]]\^2\)], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+    \(\((R - r)\)\^2 + 2  r\ R \((1 - Cos[\[Phi]])\) - 
+      r\^2\ R\^2\ Sin[\[Phi]]\^2\)], "Input"]
+},
+FrontEndVersion->"X 3.0",
+ScreenRectangle->{{0, 1152}, {0, 864}},
+WindowSize->{1118, 698},
+WindowMargins->{{Automatic, 5}, {5, Automatic}},
+PrintingPageRange->{Automatic, Automatic},
+PrintingOptions->{"PaperSize"->{612, 792},
+"PaperOrientation"->"Portrait",
+"Magnification"->1}
+]
+
+
+(***********************************************************************
+Cached data follows.  If you edit this Notebook file directly, not using
+Mathematica, you must remove the line containing CacheID at the top of 
+the file.  The cache data will then be recreated when you save this file 
+from within Mathematica.
+***********************************************************************)
+
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+
+(*NotebookFileOutline
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[1731, 51, 220, 5, 46, "Input"],
+Cell[1954, 58, 93, 1, 23, "Message"],
+Cell[2050, 61, 35, 1, 27, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[2122, 67, 266, 6, 46, "Input"],
+Cell[2391, 75, 3640, 68, 409, "Output"]
+}, Open  ]],
+Cell[6046, 146, 185, 3, 43, "Input"],
+
+Cell[CellGroupData[{
+Cell[6256, 153, 54, 1, 27, "Input"],
+Cell[6313, 156, 54, 1, 27, "Output"]
+}, Open  ]],
+Cell[6382, 160, 1496, 30, 202, "Input"],
+Cell[7881, 192, 110, 2, 22, "Input"],
+
+Cell[CellGroupData[{
+Cell[8016, 198, 46, 1, 22, "Input"],
+Cell[8065, 201, 54, 1, 22, "Output"]
+}, Open  ]],
+Cell[8134, 205, 475, 10, 91, "Input"],
+
+Cell[CellGroupData[{
+Cell[8634, 219, 46, 1, 22, "Input"],
+Cell[8683, 222, 54, 1, 22, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[8774, 228, 366, 8, 62, "Input"],
+Cell[9143, 238, 218, 4, 24, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[9398, 247, 72, 1, 22, "Input"],
+Cell[9473, 250, 218, 4, 24, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[9728, 259, 121, 3, 22, "Input"],
+Cell[9852, 264, 191, 4, 22, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[10080, 273, 298, 6, 52, "Input"],
+Cell[10381, 281, 188, 4, 24, "Output"]
+}, Open  ]],
+Cell[10584, 288, 32, 0, 24, "Text"],
+Cell[10619, 290, 370, 7, 41, "Input"],
+
+Cell[CellGroupData[{
+Cell[11014, 301, 46, 1, 22, "Input"],
+Cell[11063, 304, 53, 1, 22, "Output"]
+}, Open  ]],
+Cell[11131, 308, 147, 3, 24, "Text"],
+
+Cell[CellGroupData[{
+Cell[11303, 315, 75, 1, 22, "Input"],
+Cell[11381, 318, 418, 7, 38, "Output"]
+}, Open  ]],
+Cell[11814, 328, 59, 0, 24, "Text"],
+Cell[11876, 330, 468, 8, 67, "Input"],
+
+Cell[CellGroupData[{
+Cell[12369, 342, 50, 1, 22, "Input"],
+Cell[12422, 345, 54, 1, 22, "Output"]
+}, Open  ]],
+Cell[12491, 349, 267, 8, 24, "Text"],
+Cell[12761, 359, 293, 5, 50, "Input"],
+Cell[13057, 366, 62, 0, 24, "Text"],
+
+Cell[CellGroupData[{
+Cell[13144, 370, 65, 1, 22, "Input"],
+Cell[13212, 373, 54, 1, 22, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[13303, 379, 173, 4, 33, "Input"],
+Cell[13479, 385, 5012, 339, 148, 4777, 333, "GraphicsData", 
+"PostScript", "Graphics",
+  ImageCacheValid->False]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[18528, 729, 193, 4, 33, "Input"],
+Cell[18724, 735, 54, 1, 22, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[18815, 741, 57, 1, 22, "Input"],
+Cell[18875, 744, 54, 1, 22, "Output"]
+}, Open  ]],
+Cell[18944, 748, 22, 0, 24, "Text"],
+
+Cell[CellGroupData[{
+Cell[18991, 752, 142, 3, 22, "Input"],
+Cell[19136, 757, 806, 14, 40, "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+Cell[19979, 776, 44, 1, 22, "Input"],
+Cell[20026, 779, 346, 5, 36, "Output"]
+}, Open  ]],
+Cell[20387, 787, 363, 6, 67, "Input"],
+
+Cell[CellGroupData[{
+Cell[20775, 797, 65, 1, 22, "Input"],
+Cell[20843, 800, 73, 1, 22, "Output"]
+}, Open  ]],
+Cell[20931, 804, 52, 1, 22, "Input"],
+Cell[20986, 807, 348, 6, 38, "Input"],
+
+Cell[CellGroupData[{
+Cell[21359, 817, 78, 1, 22, "Input"],
+Cell[21440, 820, 251, 4, 37, "Output"]
+}, Open  ]],
+Cell[21706, 827, 250, 4, 38, "Input"],
+
+Cell[CellGroupData[{
+Cell[21981, 835, 126, 3, 22, "Input"],
+Cell[22110, 840, 143, 2, 22, "Output"]
+}, Open  ]],
+Cell[22268, 845, 115, 2, 22, "Input"]
+}
+]
+*)
+
+
+
+
+(***********************************************************************
+End of Mathematica Notebook file.
+***********************************************************************)
+

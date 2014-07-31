@@ -1,0 +1,555 @@
+% Draft
+%\documentclass[aps,prc,preprint,eqsecnum,groupedaddress,showpacs,floatfix,endfloats*]{revtex4}
+
+% Good-lookin'
+%\documentclass[aps,prc,preprint,eqsecnum,groupedaddress,showpacs,floatfix,tightenlines]{revtex4}
+\documentclass[aps,prc,preprint,tightenlines]{revtex4}
+
+% Two column
+%\documentclass[aps,prc,twocolumn,eqsecnum,groupedaddress,showpacs,floatfix,tightenlines]{revtex4}
+
+\usepackage{bm}
+\newcommand{\sgn}{\mbox{sign}}
+
+\begin{document}
+
+\title{On the Properties of Certain Cosine Integrals}
+\author{Jason R.\ Cooke}
+\date{\today, \texttt{\jobname}}
+\noaffiliation
+\maketitle
+
+The integral we wish to solve is
+\begin{eqnarray}
+I
+&=& I(\{a_j\},\{n_j\},N,m) \nonumber \\
+&=& \int_0^{2\pi} \frac{d\phi}{2\pi} e^{i m \phi} 
+\prod_{j=1}^N \frac{1}{(1 + a_j \cos \phi)^{n_j}},
+\end{eqnarray}
+where $m$ is an integer, $n_j$ are a positive integers, and $a_j$ are
+real numbers. Note that if one of the $a_j$'s is zero, then we can
+reduce the integral to one with $N-1$ sets of parameters.
+
+Some things to note about this integral:
+\begin{enumerate}
+\item{} \label{shifty} 
+Since the range of integration is $2\pi$, and all the functions in the
+integrand are periodic in that range, the range of integration can be
+shifted by an arbitrary amount.
+\item{} \label{swapy} 
+When the variable of integration is changed from $\phi$ to $-\phi$,
+the limits of integration can be rewritten as
+\begin{eqnarray}
+\int_0^{2\pi} d\phi \rightarrow 
+\int_0^{-2\pi} d(-\phi) =
+\int_{-2\pi}^0 d\phi =
+\int_0^{2\pi} d\phi. 
+\end{eqnarray}
+Here we have used item number \ref{shifty}.  Since $\cos(-z)=\cos(z)$,
+the only thing that changes in the integrand is the sign in the exponential.
+Hence, $I(m)=I(-m)$, or the integral is only a function of the
+magnitude of $m$.
+\item{} The integral is real, since $I(m)^*=I(-m)=I(m)$.
+\item{} We may write
+\begin{eqnarray}
+\frac{1}{(1+a\cos \phi)^n}
+&=& \prod_{j=2}^n \left[ 1 + \frac{a}{j-1} \frac{d}{da} \right]
+\frac{1}{1+a\cos \phi}
+\end{eqnarray}
+
+\end{enumerate}
+
+so that
+\begin{eqnarray}
+&&\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m}
+\prod_{j=1}^N \frac{1}{(a_j + b_j \cos \phi)^{n_j}} \nonumber\\
+&&\qquad =
+\prod_{l=1}^N \frac{(-1)^{(n_l-1)}}{(n_l-1)!} \frac{d^{n_l-1}}{d a_l^{n_l-1}}
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{a_j + b_j \cos \phi}. \label{a:ci:firstint}
+\end{eqnarray}
+Since $b_j\neq0$, we can factor out a
+$\prod_{j=1}^N\frac{1}{b_j^{n_j}}$, and we relabel
+$\frac{a_j}{b_j}\rightarrow a_j$. Then, the non-trivial integral is
+\begin{eqnarray}
+I(\{a_i\},m,N)
+&=&
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi |m|} 
+\prod_{j=1}^N \frac{1}{a_j + \cos \phi} \nonumber \\
+&=&
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi |m|} 
+\prod_{j=1}^N \frac{2 e^{i \phi}}
+{e^{2 i \phi} + 2a_j e^{i \phi} + 1}.
+\end{eqnarray}
+
+Now we let $z=e^{i\phi}$, so $d\phi e^{i\phi}= dz/i$, which allows the
+integral to be converted to a contour integral over the contour $C$, a
+unit circle in the complex plane. Then,
+\begin{eqnarray}
+I(\{a_i\},m,N) 
+&=&
+\int_C \frac{dz}{2\pi i} z^{|m|-1}
+\prod_{j=1}^N \frac{2 z}{z^2 + 2a_j z + 1} \nonumber \\
+&=&
+\int_C \frac{dz}{2\pi i} z^{|m|-1}
+\prod_{j=1}^N \frac{2 z}{(z-z_{j+})(z-z_{j-})},
+\end{eqnarray}
+where
+\begin{eqnarray}
+z_{j\pm} = \left\{
+\begin{array}{ll}
+-a_j \pm \mbox{sign}(a_j) \sqrt{a_j^2 -  1 }
+& \mbox{if } |a_j| > 1 \\
+-a_j \mp i\sqrt{ 1  - a_j^2} = -e^{\pm i \phi_i)} 
+& \mbox{if } |a_j|\leq 1 \\ 
+\end{array} \right\}.
+\end{eqnarray}
+Here $\phi_i=\arccos \sqrt{1-a_i^2}$.
+
+We will only consider the case where $|a_j|>1$. In this case, only the
+only poles that contribute are the ones at $z=z_{j+}$.  The contour
+integral is done by inspection to obtain
+\begin{eqnarray}
+I(\{a_i\},m,N) 
+&=&
+\sum_{k=1}^N
+\int_{z_{k+}} \frac{dz}{2\pi i}
+\frac{2 z^{|m|}}{(z-z_{k+})(z-z_{k-})}
+\prod_{j=1,j\neq k}^N
+\frac{2 z}{z^2 + 2 a_j z + 1} \\
+&=&
+\sum_{k=1}^N \frac{2 z_{k+}^{|m|}}{z_{k+}-z_{k-}}
+\prod_{j=1,j\neq k}^N
+\frac{2 z_{k+}}
+{z_{k+}^2 + 2 a_j z_{k+} + 1}.
+\end{eqnarray}
+Note that
+\begin{eqnarray}
+z_{k\pm}^2 + 2 a_j z_{k\pm} + 1
+&=& z_{k\pm}^2 + 2 a_k z_{k\pm} + 1
++ 2 (a_j -a_k) z_{k\pm}
+= 2 (a_j -a_k) z_{k\pm}, \\
+z_{k+}-z_{k-} &=& 
+2\, \mbox{sign}(a_k) \sqrt{a_k^2-1}.
+\end{eqnarray}
+We define $c_k$ and $d_k$ by
+\begin{eqnarray}
+c_k &\equiv& \frac{z_{k+}-z_{k-}}{2}, \\
+k_k &\equiv& z_{k+}^{|m|}.
+\end{eqnarray}
+With the appropriate replacements, we obtain
+\begin{eqnarray}
+I(\{a_i\},m,N) 
+&=& \sum_{k=1}^N \frac{d_k}{c_k} \prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k}.
+\end{eqnarray}
+
+Putting the $b_j$'s back in using the $a_i\rightarrow\frac{a_i}{b_i}$,
+we get
+\begin{eqnarray}
+c_k &=& \mbox{sign}(a_k) \sqrt{a_k^2-b_k^2}, \\
+d_k &=& \left(\frac{c_k-a_k}{b_k}\right)^{|m|}, \\
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{a_j + b_j \cos\phi}
+&=&
+\sum_{k=1}^N \frac{d_k}{c_k}
+\prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k \frac{b_j}{b_k}}.
+\end{eqnarray}
+This expression is used in Eq.~(\ref{a:ci:firstint}) get
+\begin{eqnarray}
+&&\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{(a_j + b_j \cos\phi)^{n_j}} \nonumber\\
+&& \qquad =
+\prod_{l=1}^N \frac{(-1)^{(n_l-1)}}{(n_l-1)!} \frac{d^{n_l-1}}{d a_l^{n_l-1}}
+\sum_{k=1}^N \frac{d_k}{c_k}
+\prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k \frac{b_j}{b_k}} \label{eqn:firstcosint}.
+\end{eqnarray}
+
+Specificly, for $N=1$, we can drop the subscripts.  For $n=1$,
+\begin{eqnarray}
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\frac{1}{a + b \cos\phi}
+&=& \frac{d}{c},
+\end{eqnarray}
+and for $n=2$,
+\begin{eqnarray}
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\frac{1}{(a + b \cos\phi)^2}
+&=& - \frac{d}{d a} \frac{d}{c}
+= f_2 \frac{d}{c} \\
+f_2 &=& \frac{a+|m| \, c}{c^2}.
+\end{eqnarray}
+Since $I(a,b,m)$ is like an eigenfunction of $\frac{d}{da}$, (but not
+exactly, since the ``eigenvalue'' is a function of $a$), we an use
+recursion to find that for general $n>2$,
+\begin{eqnarray}
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\frac{1}{(a + b \cos\phi)^n}
+&=& f_n I(a,b,m), \\
+f_n &=& \frac{1}{n-1}\left( f_2 f_{n-1} - \frac{d}{da} f_{n-1} \right),
+\end{eqnarray}
+Using this we get
+\begin{eqnarray}
+f_1 &=& 1, \\
+f_2 &=& \frac{a+|m| \, c}{c^2}, \\
+f_3 &=& \frac{3 a^2 + c^2(m^2-1)+3a|m|c}{2c^4}.
+\end{eqnarray}
+The higher-order $f_i$'s can easily be found from analytic iteration
+using a program like {\it Mathematica}, but apparently they do not have
+a nice analytic form. We note that in general, $f_i$ is multiplied by a
+factor of $c^{-2(i-1)}$.
+
+We now check the equation for situations that may be numerically
+unstable. First note that as $c\rightarrow0$, the $f$'s are singular,
+which is due to the form of the original integral. Since the singular
+part is multiplicative, it can easily be treated.
+
+Instabilities appear when $b$ is very small. in which case we have to
+take care of $d$ carefully as it appears to be singular. Let
+$b=2a\delta$, so we can write
+\begin{eqnarray*}
+d_k &=& \left(\frac{\sqrt{1-4\delta^2}-1}{2\delta}\right)^{|m|} 
+\approx \left[
+-\delta
+ ( 1 + \delta^2
+ ( 1 + \delta^2
+ ( 2 + \delta^2
+ ( 5 + \delta^2
+ (14 + \delta^2 \ldots ))))) \right]^{|m|}.
+\end{eqnarray*}
+This expression demonstrates that $d_k$ is not go as $b^{-|m|}$, but as
+$b^{+|m|}$ as $b\rightarrow0$.
+
+Now we analyze what happens where there is more than one term in
+the denominator. We note first that
+\begin{eqnarray}
+\left[ \left( \frac{d}{dx} \right)^n f(x)g(x) \right]
+&=& \sum_{m=0}^n \frac{n!}{m!(n-m)!}
+\left[\left( \frac{d}{dx} \right)^m     f(x)\right]
+\left[\left( \frac{d}{dx} \right)^{n-m} g(x)\right].
+\end{eqnarray}
+This means that Eq.~(\ref{eqn:firstcosint}) can be written as
+\begin{eqnarray}
+&&\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{(a_j + b_j \cos\phi)^{n_j}} \nonumber\\
+&&\qquad =
+\sum_{k=1}^N
+\left[\prod_{l=1}^N \sum_{i_l=0}^{n_l-1} \right]
+\left[
+\frac{(-1)^{(n_l-1-i_l)}}{(n_l-1-i_l)!} \frac{d^{n_l-1-i_l}}{d a_l^{n_l-1-i_l}}
+\left\{ \frac{d_k}{c_k} \right\}_{\text{on}}
+\right]
+\nonumber\\&&\qquad\qquad \times
+\left[
+\frac{(-1)^{(i_l)}}{(i_l)!} \frac{d^{i_l}}{d a_l^{i_l}}
+\left\{
+\prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k \frac{b_j}{b_k}}
+\right\}_{\text{on}}
+\right].
+\end{eqnarray}
+The product can be broken into two parts, one where $l=k$ and another
+where $l\neq k$.
+\begin{eqnarray}
+&&\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{(a_j + b_j \cos\phi)^{n_j}} \nonumber\\
+&&\qquad=
+\sum_{k=1}^N
+\left[\prod_{l=1,l\neq k}^N \sum_{i_l=0}^{n_l-1} \right]
+\left[
+\frac{(-1)^{(n_l-1-i_l)}}{(n_l-1-i_l)!} \frac{d^{n_l-1-i_l}}{d a_l^{n_l-1-i_l}}
+\left\{ \frac{d_k}{c_k} \right\}_{\text{on}}
+\right]
+\nonumber\\&&\qquad\qquad \times
+\left[
+\frac{(-1)^{(i_l)}}{(i_l)!} \frac{d^{i_l}}{d a_l^{i_l}}
+\left\{
+\prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k \frac{b_j}{b_k}}
+\right\}_{\text{on}}
+\right]
+\nonumber\\&&\qquad
+\times 
+\left[\sum_{i_k=0}^{n_k-1} \right]
+\left[
+\frac{(-1)^{(n_k-1-i_k)}}{(n_k-1-i_k)!} \frac{d^{n_k-1-i_k}}{d a_k^{n_k-1-i_k}}
+\left\{ \frac{d_k}{c_k} \right\}_{\text{on}}
+\right]
+\nonumber\\&&\qquad\qquad \times
+\left[
+\frac{(-1)^{(i_k)}}{(i_k)!} \frac{d^{i_k}}{d a_k^{i_k}}
+\left\{
+\prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k \frac{b_j}{b_k}}
+\right\}_{\text{on}}
+\right].
+\end{eqnarray}
+Now we note that $\frac{d}{da_l}\frac{d_k}{c_k}=0$, and so on, to get
+\begin{eqnarray}
+&&\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{(a_j + b_j \cos\phi)^{n_j}} \nonumber\\
+&&\qquad=
+\sum_{k=1}^N
+\prod_{l=1,l\neq k}^N 
+\left[
+\frac{(-1)^{(n_l-1)}}{(n_l-1)!} \frac{d^{n_l-1}}{d a_l^{n_l-1}}
+\left\{
+\prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k \frac{b_j}{b_k}}
+\right\}_{\text{on}}
+\right]
+\nonumber\\&&\qquad\qquad\times 
+\frac{d_k}{c_k} \sum_{i_k=0}^{n_k-1} f_{n_k-i_k}
+\left[
+\frac{(-1)^{i_k}}{i_k!} \frac{d^{i_k}}{d a_k^{i_k}}
+\left\{
+\prod_{j=1,j\neq k}^N \frac{1}{a_j-a_k \frac{b_j}{b_k}}
+\right\}_{\text{on}}
+\right]. \label{eq:cibigthing}
+\end{eqnarray}
+The first derivative term in Eq.~(\ref{eq:cibigthing}) can be written as
+\begin{eqnarray}
+&&\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{(a_j + b_j \cos\phi)^{n_j}} \nonumber\\
+&&\qquad=
+\sum_{k=1}^N \frac{d_k}{c_k} \sum_{i_k=0}^{n_k-1} f_{n_k-i_k}
+\frac{(-1)^{i_k}}{i_k!} \frac{d^{i_k}}{d a_k^{i_k}}
+\prod_{j=1,j\neq k}^N \frac{1}{\left(a_j-a_k
+\frac{b_j}{b_k}\right)^{n_j}}.
+\label{eq:ci:firstderterm}
+\end{eqnarray}
+
+Now, we consider the situation where all the $b_i$ have the same
+value,$b$. In the case where $k=N$, the complicated part of
+Eq.~(\ref{eq:ci:firstderterm}) is 
+\begin{eqnarray}
+h_N(i_N,N)
+&\equiv& \frac{1}{i_N!} \frac{d^{i_N}}{d a_N^{i_N}}
+\prod_{j=1}^{N-1} \frac{1}{(a_j-a_N)^{n_j}} \\
+&=& \sum_{i_{N-1}=0}^{i_N} h_{N-1}(i_{N-1},N-1)
+\frac{1}{(i_N-i_{N-1})!} 
+\nonumber\\&&\qquad\times
+\frac{d^{(i_N-i_{N-1})}}{d a_N^{(i_N-i_{N-1})}}
+\frac{1}{(a_{N-1}-a_N)^{n_{N-1}}} \\
+&=& \sum_{i_{N-1}=0}^{i_N} h_{N-1}(i_{N-1},N-1)
+\frac{(i_N-i_{N-1}+  n_{N-1}-1)!}
+     {(i_N-i_{N-1})!(n_{N-1}-1)!}
+\nonumber\\&&\qquad\times
+\frac{1}{(a_{N-1}-a_N)^{n_{N-1}+i_N-i_{N-1}}} \\
+&=& \prod_{l=3}^N
+\left[
+\sum_{i_{l-1}=0}^{i_l}
+\frac{(i_l-i_{l-1}+  n_{l-1}-1)!}
+     {(i_l-i_{l-1})!(n_{l-1}-1)!} \frac{1}{(a_{l-1}-a_N)^{n_{l-1}+i_l-i_{l-1}}}
+\right]
+\\&&\times
+\frac{(i_2+n_1-1)!}{i_2!(n_1-1)!} \frac{1}{(a_1-a_N)^{n_1+i_2}}.
+\end{eqnarray}
+From this, we can cyclically permute (or shuffle in any
+order) the labels to get a similar expression for $k\neq N$.
+
+For definiteness, we consider a few special cases. If $n_j=1$ for all
+$j$ except $N$, we find that
+\begin{eqnarray}
+h_2(i,1) &=& \frac{\delta_{i,0}}{(a_2-a_1)^{n_2}}, \\
+h_2(i,2) &=& \frac{1}{(a_1-a_2)^{i+1}},
+\end{eqnarray}
+and
+\begin{eqnarray}
+h_3(i,1) &=& \frac{\delta_{i,0}}{(a_2-a_1)(a_3-a_1)^{n_3}}, \\
+h_3(i,2) &=& \frac{\delta_{i,0}}{(a_1-a_2)(a_3-a_2)^{n_3}}, \\
+h_3(i,3) &=& \sum_{j=0}^i \frac{1}{(a_1-a_3)^{j+1}(a_2-a_3)^{i-j+1}}.
+\end{eqnarray}
+Using these we can write
+\begin{eqnarray}
+g_k &=& \sum_{i_k=0}^{n_k-1} (-1)^{i_k} f_{n_k-i_k} h_N(i_k,k), \\
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_{j=1}^N \frac{1}{(a_j + b_j \cos\phi)^{n_j}}
+&=& \sum_{k=1}^N \frac{d_k}{c_k} g_k.
+\end{eqnarray}
+
+\section*{Approximations}
+
+For $N=2$, consider what happens when $a_1 \approx a_2$. We can write
+$a_2 = a$, $a_1 = a - \delta$, so that
+\begin{eqnarray}
+&&I(a_1,a_2,b,n_1,n_2,m)\nonumber\\
+&&\qquad= \int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\frac{1}{(a_2 + b \cos\phi - \delta)^{n_1}}
+\frac{1}{(a_2 + b \cos\phi)^{n_2}} \\
+&&\qquad= \int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\frac{1}{(a_2 + b \cos\phi)^{n_1+n_2}}
+\sum_{j=0}^\infty \frac{(n_1-1+j)!}{(n_1-1)!j!}
+\frac{\delta^j}{(a+b\cos\phi)^j} \\
+&&\qquad= \left[ \sum_{j=0}^\infty (a_2-a_1)^j \frac{(n_1-1+j)!}{(n_1-1)!j!}
+f_{n_1+n_2+j} \right] \frac{d_2}{c_2}.
+\end{eqnarray}
+
+For $N=3$, we could have $a_2\approx a_3$ (or equivalently
+$a_1\approx a_3$). In this case,
+\begin{eqnarray}
+&&I(a_1,a_2,a_3,b,1,1,n,m) \nonumber\\
+&&\qquad= \sum_{j=0}^\infty (a_3-a_2)^j
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\frac{1}{ a_1 + b \cos\phi}
+\frac{1}{(a_3 + b \cos\phi)^{n+j+1}} \\
+&&\qquad= \sum_{j=0}^\infty (a_3-a_2)^j I(a_1,a_3,b,1,n+j+1,m).
+\end{eqnarray}
+When $a_1\approx a_2$ but $a_1\not\approx a_3$, we get
+\begin{eqnarray}
+I(a_1,a_2,a_3,b,1,1,n,m)
+&=& \sum_{j=0}^\infty (a_2-a_1)^j I(a_1,a_3,b,2+j,n,m).
+\end{eqnarray}
+
+\section*{Summary}
+
+We define
+\begin{eqnarray}
+I(\{a_i\},b,\{n_i\},m) &=&
+\int_0^{2\pi} \frac{d\phi}{2\pi} e^{i \phi m} 
+\prod_i \frac{1}{(a_i+b\cos\phi)^{n_i}}, \\
+c_k &=& a_k \sqrt{1-\left(\frac{b_k}{a_k}\right)^2}, \\
+d_k &=& \left(\frac{c_k-a_k}{b_k}\right)^{|m|}.
+\end{eqnarray}
+We assume that $n_i>0$ and $b_i\neq0$.
+
+For $N=1$, the integral is
+\begin{eqnarray}
+I(a,b,n,m) &=& f_n \frac{d}{c},
+\end{eqnarray}
+and for $N=2$, the integral is
+\begin{eqnarray}
+I(a_1,a_2,b,n_1,n_2,m)
+&=&
+(-1)^{n_2}
+\left( \sum_{j=0}^{n_1-1} f_{n_1-j} \frac{(j+n_2-1)!}{j!(n_2-1)!}
+\frac{1}{(a_1-a_2)^{j+n_2}} \right)
+\frac{d_1}{c_1} \nonumber\\&&
++
+(-1)^{n_1}
+\left( \sum_{j=0}^{n_2-1} f_{n_2-j} \frac{(j+n_1-1)!}{j!(n_1-1)!}
+\frac{1}{(a_2-a_1)^{j+n_1}} \right)
+\frac{d_2}{c_2}.
+\end{eqnarray}
+For $N=2$, and with $n_1=1$ the integral simplifies to
+\begin{eqnarray}
+I(a_1,a_2,b,1,n,m)
+&=& \frac{1}{(a_2-a_1)^n} \frac{d_1}{c_1}
+- \left( \sum_{j=0}^{n-1} f_{n-j} \frac{1}{(a_2-a_1)^{j+1}} \right)
+\frac{d_2}{c_2}.
+\end{eqnarray}
+When $N=3$ and $n_1=n_2=1$ the integral is
+\begin{eqnarray}
+&&I(a_1,a_2,a_3,b,1,1,n,m) \nonumber\\
+&&\qquad=
+\frac{1}{(a_2-a_1)(a_3-a_1)^n} \frac{d_1}{c_1} +
+\frac{1}{(a_1-a_2)(a_3-a_2)^n} \frac{d_2}{c_2} \nonumber\\&& \qquad\qquad+
+\left[ \sum_{i=0}^{n-1} (-1)^i f_{n-i}
+\sum_{j=0}^i \frac{1}{(a_1-a_3)^{j+1}(a_2-a_3)^{i-j+1}} \right] \frac{d_3}{c_3}.
+\end{eqnarray}
+
+\section{Old}
+
+To do this integral, we pull out complex analysis, and use this corollary
+to the Cauchy-Gorsat theorem,
+\begin{eqnarray}
+f^{(n)}(z) &=& \frac{n!}{2\pi i} \int_C \frac{ds \, f(s)}{(s-z)^{n+1}}
+ \qquad n \in \{0,1,2,3,\ldots\} \nonumber
+\end{eqnarray}
+where the $s$ is contained in the contour, and $f$ is analytic inside
+the contour.  This can be rewritten as
+\begin{eqnarray}
+\int_C \frac{dz}{(z-s)^{n}} f(z)
+&=& 
+\frac{2\pi i}{(n-1)!} \frac{d^{n-1}}{dz^{n-1}} \left.f(z)\right|_{z=s} 
+\nonumber 
+\end{eqnarray}
+
+Using this,
+\begin{eqnarray}
+I(a,b,l\geq 0,m,n) &=& 
+\frac{2^{m+n}}{(m-1)!} \frac{d^{m-1}}{d z^{m-1}} \left(
+\frac{z^{l+m+n-1}}{(z-z_{a-})^m (z^2 + 2 b z + 1)^n}
+\right)_{z=z_{a+}} + \nonumber \\
+& & \qquad +
+\frac{2^{m+n}}{(n-1)!} \frac{d^{n-1}}{d z^{n-1}} \left(
+\frac{z^{l+m+n-1}}{(z-z_{b-})^n (z^2 + 2 a z + 1)^m}
+\right)_{z=z_{b+}} \nonumber
+\end{eqnarray}
+
+Specificly, for $m=1$ and $n=0$,
+\begin{eqnarray}
+I(a,b,l\geq 0,m=1,n=0) = 2 \frac{z_{a+}^l}{z_{a+}-z_{a-}}
+= \frac{\sgn(a)}{\sqrt{a^2-1}} \left(-a + \sgn(a) \sqrt{a^2-1}\right)^l 
+\nonumber
+\end{eqnarray}
+and for $m=2$, $n=0$,
+\begin{eqnarray}
+&&I(a,b,l\geq 0,m=2,n=0) \nonumber \\
+&=& 4 \frac{z_{a+}^{l+1}}{(z_{a+}-z_{a-})^2} 
+\left( \frac{l+1}{z_{a+}} - \frac{2}{z_{a+} - z_{a-}} \right) \nonumber \\
+&=& \frac{1}{a^2-1} \left(-a + \sgn(a) \sqrt{a^2-1}\right)^{l+1}
+\left( \frac{l+1}{-a + \sgn(a) \sqrt{a^2-1}} - \frac{\sgn(a)}{\sqrt{a^2-1}}
+\right) \nonumber \\
+&=& \frac{1}{a^2-1} \left(-a + \sgn(a) \sqrt{a^2-1}\right)^{l+1}
+\left( 
+\frac{|a| + l \sqrt{a^2-1}}{(-a + \sgn(a) \sqrt{a^2-1}) \sqrt{a^2-1}} 
+\right) \nonumber \\
+&=& \frac{1}{(a^2-1)^{3/2}} \left(-a + \sgn(a) \sqrt{a^2-1}\right)^l
+\left(|a| + l \sqrt{a^2-1}\right) \nonumber \\
+&=& I(a,b,l\geq 0,m=1,n=0) \frac{a + l \, \sgn(a) \sqrt{a^2-1}}{a^2-1}
+\nonumber
+\end{eqnarray}
+and for $m=1$, $n=1$, we first note that
+$z_{c\pm}^2 + 2 d z_{c\pm} + 1 
+=z_{c\pm}^2 + 2 c z_{c\pm} + 1 + 2 (d-c) z_{c\pm} = 2 (d-c) z_{c\pm}$.
+Also, it it happens that $a=b$, then we should use the formula above.
+Then,
+\begin{eqnarray}
+&&I(a,b,l\geq 0,m=1,n=1)\nonumber \\
+&=& 
+4 \frac{z_{a+}^{l+1}}{(z_{a+}-z_{a-}) (z_{a+}^2 - 2 b z_{a+} + 1)} +
+4 \frac{z_{b+}^{l+1}}{(z_{b+}-z_{b-}) (z_{b+}^2 - 2 a z_{a+} + 1)} 
+\nonumber \\
+&=& 
+4 \frac{z_{a+}^{l+1}}{(2\, \sgn(a)\sqrt{a^2-1})(2 (b-a) z_{a+})} +
+4 \frac{z_{b+}^{l+1}}{(2\, \sgn(b)\sqrt{b^2-1})(2 (a-b) z_{b+})} 
+\nonumber \\
+&=& \frac{1}{a-b} \left(
+\frac{\left(-b+\sgn(b)\sqrt{b^2-1}\right)^l}{\sgn(b)\sqrt{b^2-1}} -
+\frac{\left(-a+\sgn(a)\sqrt{a^2-1}\right)^l}{\sgn(a)\sqrt{a^2-1}} \right)
+\nonumber
+\end{eqnarray}
+
+Now we wish to return to our original integral,
+$I(a,b,l,m) = \frac{1}{b^m} I(a/b,l,m)$.  Therefore, we get
+\begin{eqnarray}
+\int_0^{2\pi} \frac{d\theta}{2\pi}
+\frac{e^{i \theta l}}{(a + c \cos\theta)}
+&=&
+\frac{\sgn(a)}{\sqrt{a^2-c^2}} 
+\left(\frac{-a + \sgn(a) \sqrt{a^2-c^2}}{c}\right)^{|l|}
+\end{eqnarray}
+if $a^2>c^2$.
+
+And
+\begin{eqnarray}
+\int_0^{2\pi} \frac{d\theta}{2\pi}
+\frac{e^{i \theta l}}{(a + c \cos\theta)^2}
+&=& 
+\left(\int_0^{2\pi} \frac{d\theta}{2\pi}
+\frac{e^{i \theta l}}{(a + c \cos\theta)} \right)
+\frac{a + l \, \sgn(a) \sqrt{a^2-c^2}}{a^2-c^2}
+\end{eqnarray}
+
+In particular, for the case when $a^2 > b^2$, and $a<0$ and $b>0$,
+\begin{eqnarray}
+I(a,b,l,1) &=& 
+-\frac{2\pi}{\sqrt{a^2-b^2}} \left(\frac{-a - \sqrt{a^2-b^2}}{b}\right)^{|l|}
+\label{cosintmeq1} \\
+I(a,b,l,2) 
+&=& 
+ \frac{2\pi}{(a^2-b^2)^{3/2}} \left(\frac{-a - \sqrt{a^2-b^2}}{b}\right)^{|l|}
+\left(-a + |l| \sqrt{a^2-b^2}\right) \label{cosintmeq2} \\
+&=& I(a,b,l,1) \frac{a - |l| \sqrt{a^2-b^2}}{a^2-b^2} \nonumber 
+\end{eqnarray}
+Note that the first equation is negative definite, while the second one is 
+positive definite.
+
+
+\end{document}
