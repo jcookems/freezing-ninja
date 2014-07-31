@@ -4,12 +4,6 @@ using System.Linq;
 using Mapper.Consumer;
 using System.Threading.Tasks;
 
-#if !NETFX_CORE
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Shapes;
-#endif
 #if NETFX_CORE
 using Windows.Foundation;
 using Windows.UI;
@@ -17,6 +11,12 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Shapes;
+#else
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using System.Diagnostics;
 #endif
 
 namespace Mapper
@@ -26,18 +26,29 @@ namespace Mapper
         private static Dictionary<string, Brush> brushCache;
         private Dictionary<int, Point> RoomLocations = new Dictionary<int, Point>();
         private List<Action> actions = new List<Action>();
-        private List<ElementDescription> elements = new List<ElementDescription>();
+        private IEnumerable<ElementDescription> elements = new List<ElementDescription>();
         private BoundingRectangle buildingBounds = new BoundingRectangle();
         private double pathScale;
 
         public XamlMapInfo(RoomInfo location, string svgDocContent, double scale)
         {
             elements = (List<ElementDescription>)Newtonsoft.Json.JsonConvert.DeserializeObject(svgDocContent, typeof(List<ElementDescription>));
-            foreach (var description in elements)
+            UpdateBounds(scale);
+        }
+
+        public XamlMapInfo(RoomInfo location, IEnumerable<ElementDescription> elements, double scale)
+        {
+            this.elements = elements;
+            UpdateBounds(scale);
+        }
+
+        private void UpdateBounds(double scale)
+        {
+            foreach (var description in this.elements)
             {
                 description.SetScale(scale);
                 pathScale = scale;
-              
+
                 switch (description.Type)
                 {
                     case ElementType.Circle:
@@ -52,59 +63,96 @@ namespace Mapper
                         }
                         break;
                     case ElementType.Path:
+                        if (description.CenterX.HasValue && description.CenterY.HasValue)
+                        {
+                            buildingBounds.UpdateBounds(description.CenterX.Value, description.CenterY.Value);
+                        }
+                        break;
                     default:
                         break;
                 }
             }
         }
 
-        /// <summary>
-        /// If the point is in a hall, just return it. Else, move the point so that it is
-        /// inside the nearest hall.
-        /// </summary>
-        /// <param name="p"></param>
-        /// <returns></returns>
-        public Point RebasePointToHall(Point testPoint)
-        {
-            // We have the hall outlines, 
+        ///// <summary>
+        ///// If the point is in a hall, just return it. Else, move the point so that it is
+        ///// inside the nearest hall.
+        ///// </summary>
+        ///// <param name="p"></param>
+        ///// <returns></returns>
+        //public Point RebasePointToHall(Point testPoint)
+        //{
+        //    // We have the hall outlines, 
 
-            Tuple<Point, double> prevNearestWall = null;
-            foreach (var x in elements.Where(p => p.IsHall.Value))
+        //    Tuple<Point, double> prevNearestWall = null;
+        //    foreach (var x in elements.Where(p => p.IsHall.Value))
+        //    {
+        //        var nearestWall = x.GetClosestWallIntersection(testPoint);
+        //        if (nearestWall.Item2 <= 0)
+        //        {
+        //            return testPoint;
+        //        }
+        //        else if (prevNearestWall == null || nearestWall.Item2 < prevNearestWall.Item2)
+        //        {
+        //            prevNearestWall = nearestWall;
+        //        }
+        //    }
+
+        //    return prevNearestWall.Item1;
+        //}
+
+        //public Point? GetRoomLocation(int room)
+        //{
+        //    Point loc;
+        //    return (RoomLocations.TryGetValue(room, out loc) ? (Point?)loc : null);
+        //}
+
+        public async Task Render(UIElementCollection childCollection, Transform textRotation,
+            Action<BoundingRectangle, double, double> mapBounds,
+            Func<Action, Task> dispatcher, RoomInfo location,
+            FrameworkElement overlay)
+        {
+            // Use the whole object to allow the overlay to render in the meantime.
+            if (overlay.ActualWidth == 0 || overlay.ActualHeight == 0)
             {
-                var nearestWall = x.GetClosestWallIntersection(testPoint);
-                if (nearestWall.Item2 <= 0)
+#if NETFX_CORE
+                EventHandler<object> foo = null;
+                foo = (object sender, object e) =>
+#else
+                EventHandler foo = null;
+                foo = (object sender, EventArgs e) =>
+#endif
                 {
-                    return testPoint;
-                }
-                else if (prevNearestWall == null || nearestWall.Item2 < prevNearestWall.Item2)
-                {
-                    prevNearestWall = nearestWall;
-                }
+                    mapBounds(buildingBounds, overlay.ActualWidth, overlay.ActualHeight);
+                    overlay.LayoutUpdated -= foo;
+                };
+                overlay.LayoutUpdated += foo;
+            }
+            else
+            {
+                await dispatcher(() => mapBounds(buildingBounds, overlay.ActualWidth, overlay.ActualHeight));
             }
 
-            return prevNearestWall.Item1;
-        }
-
-        public Point? GetRoomLocation(int room)
-        {
-            Point loc;
-            return (RoomLocations.TryGetValue(room, out loc) ? (Point?)loc : null);
-        }
-
-        public async Task Render(Canvas parent, CompositeTransform textRotation,
-            Action<BoundingRectangle> mapBounds, Func<Action, Task> dispatcher, RoomInfo location)
-        {
-            await dispatcher(() => mapBounds(buildingBounds));
-
-            foreach (var description in elements.Where(p => p.Parent == ParentType.Labels || p.Parent == ParentType.Rooms))
+            // Do the rooms first
+            foreach (var description in elements
+                .Where(p => p.Parent == ParentType.Labels || p.Parent == ParentType.Rooms)
+                .Where(p => p.Type != ElementType.Text))
             {
-                await this.checkRunActions(50, () => RenderElement(parent, textRotation, description), dispatcher);
+                await this.checkRunActions(50, () => RenderElement(childCollection, textRotation, description), dispatcher);
+            }
+
+            // Then the text on top
+            foreach (var description in elements
+                .Where(p => p.Parent == ParentType.Labels || p.Parent == ParentType.Rooms)
+                .Where(p => p.Type == ElementType.Text))
+            {
+                await this.checkRunActions(50, () => RenderElement(childCollection, textRotation, description), dispatcher);
             }
 
             // Highlight the correct room
             await this.checkRunActions(1, () =>
                {
-                   var roomElement = parent.Children.OfType<Path>().FirstOrDefault(p => ToInt(p.Tag as string) == location.Room);
+                   var roomElement = childCollection.OfType<Path>().FirstOrDefault(p => ToInt(p.Tag as string) == location.Room);
                    if (roomElement != null)
                    {
                        roomElement.Fill = new SolidColorBrush(Colors.Magenta);
@@ -114,7 +162,7 @@ namespace Mapper
             foreach (var description in elements.Where(p => p.Parent == ParentType.Background))
             {
                 // Fewer because these paths are more complex
-                await this.checkRunActions(5, () => RenderElement(parent, textRotation, description), dispatcher);
+                //   await this.checkRunActions(50, () => RenderElement(childCollection, textRotation, description), dispatcher);
             }
 
             await this.checkRunActions(0, () => { }, dispatcher);
@@ -134,15 +182,21 @@ namespace Mapper
             {
                 var oldActions = actions;
                 actions = new List<Action>();
-                await dispatcher(() => { foreach (var aa in oldActions)  aa(); });
-#if !NETFX_CORE
-                //                System.Threading.Thread.Sleep(30);
-#endif
+                if (dispatcher == null)
+                {
+                    foreach (var aa in oldActions) aa();
+                }
+                else
+                {
+                    await dispatcher(() => { foreach (var aa in oldActions)  aa(); });
+                }
             }
         }
 
-        private static void RenderElement(Canvas parent, CompositeTransform textRotation, ElementDescription element)
+        private static void RenderElement(UIElementCollection childCollection, Transform textRotation, ElementDescription element)
         {
+            //    Debug.WriteLine(element.ToString());
+
             switch (element.Type)
             {
                 case ElementType.Circle:
@@ -153,7 +207,7 @@ namespace Mapper
                         Fill = BrushForColor(element.Fill),
                         Stroke = BrushForColor(element.Stroke),
                     };
-                    parent.Children.Add(e);
+                    childCollection.Add(e);
                     Canvas.SetLeft(e, element.CenterX.Value);
                     Canvas.SetTop(e, element.CenterY.Value);
                     break;
@@ -162,11 +216,13 @@ namespace Mapper
                     {
                         Data = ProcessPathData(element.GetPath()),
                         Tag = element.Text,
-                        Fill = BrushForColor(element.Fill),
+                        Fill = BrushForColor("#80000000"), // element.Fill),
                         Stroke = BrushForColor(element.Stroke),
-                        StrokeThickness = element.Scale.Value * (double)Path.StrokeThicknessProperty.GetMetadata(typeof(Path)).DefaultValue
+                        StrokeThickness = element.Scale.Value * (double)Path.StrokeThicknessProperty.GetMetadata(typeof(Path)).DefaultValue,
                     };
-                    parent.Children.Add(path);
+                    childCollection.Add(path);
+                    //Canvas.SetLeft(path, element.CenterX.Value);
+                    //Canvas.SetTop(path, element.CenterY.Value);
                     break;
                 case ElementType.Text:
                     Canvas canvas = new Canvas()
@@ -176,14 +232,15 @@ namespace Mapper
                     FrameworkElement tb =
                         new Border()
                         {
-                            //BorderThickness = new Thickness(1),
-                            //BorderBrush = new SolidColorBrush(Colors.Magenta),
+                            //       BorderThickness = new Thickness(1),
+                            //       BorderBrush = new SolidColorBrush(Colors.Magenta),
                             Child =
                                 new TextBlock()
                                 {
                                     HorizontalAlignment = HorizontalAlignment.Center,
                                     VerticalAlignment = VerticalAlignment.Center,
-                                    Foreground = BrushForColor("white"), //  element.Stroke),
+                                    //                                    Foreground = BrushForColor(string.IsNullOrEmpty(element.Stroke) ? "white" : element.Stroke),
+                                    Foreground = BrushForColor("white"),
                                     FontSize = element.FontSize * 0.85,
                                     Text = element.Text,
                                 }
@@ -196,7 +253,7 @@ namespace Mapper
                         Canvas.SetTop(tb, -tb.ActualHeight / 2);
                     };
 
-                    parent.Children.Add(canvas);
+                    childCollection.Add(canvas);
                     Canvas.SetLeft(canvas, element.CenterX.Value);
                     Canvas.SetTop(canvas, element.CenterY.Value);
                     break;
@@ -207,6 +264,7 @@ namespace Mapper
 
         private static Geometry ProcessPathData(List<PathInfo> pis)
         {
+            if (pis == null) return null;
             PathGeometry geometry = new PathGeometry();
             PathFigure figure = null;
             foreach (var pi in pis)
@@ -269,6 +327,19 @@ namespace Mapper
             }
             else
             {
+                if (colorName.StartsWith("#"))
+                {
+                    string opacityPart = (colorName.Length == 7 ? "FF" : colorName.Substring(1, 2));
+                    string colorPart = colorName.Substring((colorName.Length == 7 ? 1 : 3), 6);
+                    byte a = (byte)Convert.ToInt32(opacityPart, 16);
+                    byte r = (byte)Convert.ToInt32(colorPart.Substring(0, 2), 16);
+                    byte g = (byte)Convert.ToInt32(colorPart.Substring(2, 2), 16);
+                    byte b = (byte)Convert.ToInt32(colorPart.Substring(4, 2), 16);
+                    Color c = Color.FromArgb(a, r, g, b);
+                    var scb = new SolidColorBrush(c);
+                    brushCache.Add(colorName, scb);
+                    return scb;
+                }
                 throw new ArgumentOutOfRangeException("Color not supported: " + colorName);
             }
         }

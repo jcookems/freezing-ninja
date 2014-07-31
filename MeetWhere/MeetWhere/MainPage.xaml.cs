@@ -1,85 +1,101 @@
-﻿using Mapper;
-using Mapper.Consumer;
+﻿using Mapper.Consumer;
+using Mapper;
 using MeetWhere.Cloud;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using System;
-#if !NETFX_CORE
+
+#if WINDOWS_PHONE || NETFX_CORE
+using Windows.Devices.Geolocation;
+#endif
+
+#if WINDOWS_PHONE
+using FakeDoubleTapEventArgs = System.Windows.Input.GestureEventArgs;
+using FakeManipulationDeltaArgs = System.Windows.Input.ManipulationDeltaEventArgs;
+using FakePage = Microsoft.Phone.Controls.PhoneApplicationPage;
+using FakePoint = System.Windows.Input.StylusPoint;
+using FakePointerButtonEventArgs = System.Windows.Input.MouseButtonEventArgs;
+using FakePointerEventArgs = System.Windows.Input.MouseEventArgs;
 using Microsoft.Devices.Sensors;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
 using Microsoft.Phone.UserData;
 using System.IO.IsolatedStorage;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Navigation;
-using Windows.Devices.Geolocation;
-using FakeDoubleTapEventArgs = System.Windows.Input.GestureEventArgs;
-using FakePointerButtonEventArgs = System.Windows.Input.MouseButtonEventArgs;
-using FakePointerEventArgs = System.Windows.Input.MouseEventArgs;
-using FakePage = Microsoft.Phone.Controls.PhoneApplicationPage;
-using FakePoint = System.Windows.Input.StylusPoint;
-using FakePoint2 = System.Windows.Point;
-using FakeManipulationDeltaArgs = System.Windows.Input.ManipulationDeltaEventArgs;
-#else
-using System.Threading.Tasks;
-using Windows.Devices.Geolocation;
-using Windows.UI.Core;
-using Windows.UI.Popups;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using Windows.UI.Xaml.Input;
-using Windows.Foundation;
+using System.Windows;
+using Microsoft.Devices;
+using System.Windows.Media.Imaging;
+using ZXing;
+using System.Windows.Shapes;
+using System.ComponentModel;
+using System.Collections.Generic;
+using MeetWhere.XPlat;
+using Windows.Phone.Media.Capture;
+using System.IO;
+#elif NETFX_CORE
 using FakeDoubleTapEventArgs = Windows.UI.Xaml.Input.DoubleTappedRoutedEventArgs;
-using FakePointerButtonEventArgs = Windows.UI.Xaml.Input.PointerRoutedEventArgs;
-using FakePointerEventArgs = Windows.UI.Xaml.Input.PointerRoutedEventArgs;
+using FakeManipulationDeltaArgs = Windows.UI.Xaml.Input.ManipulationDeltaRoutedEventArgs;
+using FakeMouseWheelEventArgs = Windows.UI.Xaml.Input.PointerRoutedEventArgs;
 using FakePage = Windows.UI.Xaml.Controls.Page;
 using FakePoint = Windows.Foundation.Point;
-using FakePoint2 = Windows.Foundation.Point;
-using FakeManipulationDeltaArgs = Windows.UI.Xaml.Input.ManipulationDeltaRoutedEventArgs;
-#endif
-using System.Diagnostics;
+using FakePointerButtonEventArgs = Windows.UI.Xaml.Input.PointerRoutedEventArgs;
+using FakePointerEventArgs = Windows.UI.Xaml.Input.PointerRoutedEventArgs;
+using Windows.Foundation;
+using Windows.UI.Popups;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Navigation;
+using Windows.UI.Xaml;
 using Windows.UI;
+using Windows.Devices.Enumeration;
+using Windows.Media.Capture;
+using ZXing;
+using Windows.UI.Xaml.Media.Imaging;
+using Windows.Storage.Streams;
+using Windows.Media.MediaProperties;
+#else
+using FakeDoubleTapEventArgs = System.Windows.Input.MouseEventArgs;
+using FakeManipulationDeltaArgs = System.Windows.Input.ManipulationDeltaEventArgs;
+using FakeMouseWheelEventArgs = System.Windows.Input.MouseWheelEventArgs;
+using FakePage = System.Windows.Window;
+using FakePoint = System.Windows.Input.StylusPoint;
+using FakePointerButtonEventArgs = System.Windows.Input.MouseButtonEventArgs;
+using FakePointerEventArgs = System.Windows.Input.MouseEventArgs;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows;
+using MeetWhere.XPlat;
+#endif
 
 
 namespace MeetWhere
 {
     public partial class MainPage : FakePage
     {
-#if !NETFX_CORE
+#if WINDOWS_PHONE
         private Motion motion;
         private double? prevRot = null;
 #endif
+#if WINDOWS_PHONE || NETFX_CORE
         private Geolocator geolocator;
         private Geocoordinate coordinate;
         private PositionStatus status;
+#endif
         // This factor is to combat clipping and smooshing of the controls in XAML
         private double mapScaleFactor = 0.25;
-
-
-        private CompositeTransform ViewTransform
-        {
-            get
-            {
-                CompositeTransform transform = view.RenderTransform as CompositeTransform;
-                if (transform == null)
-                {
-                    transform = new CompositeTransform();
-                    view.RenderTransform = transform;
-                }
-                return transform;
-            }
-        }
 
         public MainPage()
         {
             InitializeComponent();
             this.Loaded += async (s, e) =>
             {
+#if NETFX_CORE || WINDOWS_PHONE
                 try
                 {
                     var x = await CloudAccesser.Authenticate(true);
@@ -89,10 +105,15 @@ namespace MeetWhere
                 {
                     Debug.WriteLine(ex.ToString());
                 }
+#else
+                backToMainScreen();
+                await UI.DummyTask();
+                Waiter(false);
+#endif
             };
         }
 
-#if !NETFX_CORE
+#if WINDOWS_PHONE
         protected override void OnBackKeyPress(System.ComponentModel.CancelEventArgs e)
         {
             if (!isOnMainScreen())
@@ -118,20 +139,24 @@ namespace MeetWhere
             ContentPanel.Visibility = Visibility.Visible;
             view.Visibility = Visibility.Collapsed;
             overlay.Visibility = Visibility.Collapsed;
-            ResetMap();
+            this.roomDisplay.Text = "";
+            view.ResetMap();
         }
 
-        private async Task<object> ShowMap(RoomInfo location)
+        private async Task ShowMap(RoomInfo location, double? longitude = null, double? latitude = null)
         {
-            if (location == null) return null;
+            if (location == null) return;
 
-            string svgDocContent = await CloudAccesser.LoadMapSvg(location, Waiter);
+            string content = await CloudAccesser.LoadMapSvg(location, Waiter);
+            MapMetadata mapMetadata = await CloudAccesser.LoadMapMetadata(location);
 
+#if NETFX_CORE || WINDOWS_PHONE
             UpdateLoginLogoutUI();
+#endif
+            if (content == null) return;
 
-            if (svgDocContent == null) return null;
-
-            ResetMap();
+            this.roomDisplay.Text = "";
+            view.ResetMap();
 
             this.roomDisplay.Text = location.ToString();
 
@@ -140,16 +165,24 @@ namespace MeetWhere
             view.Visibility = Visibility.Visible;
             overlay.Visibility = Visibility.Visible;
             var resources = this.Resources;
-            var textRotation = (CompositeTransform)this.Resources["antiRotation"];
             var dispatcher = this.Dispatcher;
 
-            var map = new XamlMapInfo(location, svgDocContent, mapScaleFactor);
-            return map.Render(viewChildren, textRotation, SetViewForMap, RunOnUIThread, location);
+            var map = new XamlMapInfo(location, content, mapScaleFactor);
+            this.view.MapMetadata = mapMetadata;
+            await map.Render(view.LiveChildCollection, view.TextRotation, (a, b, c) =>
+                {
+                    this.view.SetViewForMap(a, b, c);
+                    if (latitude.HasValue && longitude.HasValue)
+                    {
+                        view.ShowScanLoc(longitude.Value, latitude.Value);
+                    }
+                }, RunOnUIThread, location, overlay);
         }
 
+#if WINDOWS_PHONE || NETFX_CORE
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-#if !NETFX_CORE
+#if WINDOWS_PHONE
             if (!IsolatedStorageSettings.ApplicationSettings.Contains("LocationConsent"))
             {
                 MessageBoxResult result =
@@ -162,6 +195,7 @@ namespace MeetWhere
 
             if ((bool)IsolatedStorageSettings.ApplicationSettings["LocationConsent"])
 #endif
+#if WINDOWS_PHONE || NETFX_CORE
             {
                 geolocator = new Geolocator();
                 geolocator.DesiredAccuracy = PositionAccuracy.High;
@@ -178,8 +212,8 @@ namespace MeetWhere
                     ShowLoc();
                 };
             }
-
-#if !NETFX_CORE
+#endif
+#if WINDOWS_PHONE
             if (Motion.IsSupported)
             {
                 motion = new Motion();
@@ -200,36 +234,90 @@ namespace MeetWhere
             Appointments appointments = new Appointments();
             appointments.SearchCompleted += (sender, e2) =>
             {
-                DateList.ItemsSource = e2.Results.OrderBy(p => p.StartTime);
+                List<FakeAppointment> res = e2.Results.Select(p => new FakeAppointment(p)).ToList();
+                if (res.Count == 0)
+                {
+                    res.Add(new FakeAppointment() { Subject = "Zumo test Team meeting", StartTime = new DateTime(2013, 7, 25), Location = "Conf Room 2/2063 (8) AV" });
+                }
+                this.DateList.ItemsSource = res.OrderBy(p => p.StartTime);
                 Waiter(false);
             };
             appointments.SearchAsync(DateTime.Now, DateTime.Now.AddDays(7), null);
 #else
             Waiter(false);
 #endif
-
         }
 
-#if NETFX_CORE
-        private void Foo_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+#endif
+
+#if WINDOWS_PHONE
+        private async void DateList_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
+            if (e.AddedItems.Count == 0)
+            {
+                return;
+            }
+            var content = (FakeAppointment)e.AddedItems[0];
+            DateList.SelectedIndex = -1;
+            await ShowMap(RoomInfo.Parse(content.Location));
+        }
+#endif
+
+
+#if !WINDOWS_PHONE
+        private void Foo_PointerWheelChanged(object sender, FakeMouseWheelEventArgs e)
+        {
+            bool isFineTune = this.fineTuneLocation.IsChecked.Value;
             FrameworkElement source = (FrameworkElement)sender;
-            var point = e.GetCurrentPoint(source);
+#if !NETFX_CORE
+            var point = e.GetPosition(source);
+            double MouseWheelDelta = e.Delta;
+#else
+            var vpoint = e.GetCurrentPoint(source);
+            double MouseWheelDelta = vpoint.Properties.MouseWheelDelta;
+            var point = vpoint.Position;
+#endif
             if (this.wheelToggle.IsChecked.Value)
             {
-                double newScale = Math.Exp(point.Properties.MouseWheelDelta * 0.0005);
-                ScaleIt(newScale, point.Position.X - source.ActualWidth / 2, point.Position.Y - source.ActualHeight / 2);
+                double multipler = MouseWheelDelta * 0.0005;
+                if (isFineTune)
+                {
+                    multipler *= 0.1;
+                }
+
+                double newScale = Math.Exp(multipler);
+                if (isFineTune)
+                {
+                    view.DeltaOffsetScale(newScale);
+                }
+                else
+                {
+                    view.AddScale(newScale, point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2);
+                }
             }
             else
             {
-                double newRot = (ViewTransform.Rotation + point.Properties.MouseWheelDelta / 10) * 2 * Math.PI / 360;
-                SetBaseRotation(newRot, new Point(point.Position.X - source.ActualWidth / 2, point.Position.Y - source.ActualHeight / 2));
+                double multipler = MouseWheelDelta / 10;
+                if (isFineTune)
+                {
+                    multipler *= 0.1;
+                }
+
+                double newRot = multipler * 2 * Math.PI / 360;
+
+                if (isFineTune)
+                {
+                    view.DeltaOffsetRot(newRot);
+                }
+                else
+                {
+                    view.AddBaseRotation(newRot, new Point(point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2));
+                }
             }
 
             e.Handled = true;
         }
-#else
-
+#elif WINDOWS_PHONE
         private void CurrentValueChanged(MotionReading reading)
         {
             Microsoft.Xna.Framework.Vector3 transformed = Microsoft.Xna.Framework.Vector3.Transform(new Microsoft.Xna.Framework.Vector3(-1, 0, 0), reading.Attitude.RotationMatrix);
@@ -237,26 +325,14 @@ namespace MeetWhere
 
             if (!prevRot.HasValue || Math.Abs(rot - prevRot.Value) > 0.01)
             {
-                Dispatcher.BeginInvoke(() => SetBaseRotation(rot));
+                Dispatcher.BeginInvoke(() => view.SetBaseRotation(rot));
             }
-        }
-
-        private async void DateList_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
-        {
-            if (e.AddedItems.Count == 0)
-            {
-                return;
-            }
-            var content = (Appointment)e.AddedItems[0];
-            DateList.SelectedIndex = -1;
-            await ShowMap(RoomInfo.Parse(content.Location));
         }
 #endif
 
         private void Foo_ManipulationDelta_1(object sender, FakeManipulationDeltaArgs e)
         {
-#if !NETFX_CORE
-
+#if WINDOWS_PHONE
             if (e.PinchManipulation == null)
             {
                 return;
@@ -265,184 +341,73 @@ namespace MeetWhere
             // Scale Manipulation
             FrameworkElement source = (FrameworkElement)sender;
             var point = e.PinchManipulation.Current.Center;
-            ScaleIt(e.PinchManipulation.DeltaScale, point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2);
+            view.AddScale(e.PinchManipulation.DeltaScale, point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2);
             e.Handled = true;
+#elif NETFX_CORE
+            if (this.fineTuneLocation.IsChecked.Value)
+            {
+                view.OffsetTranslate(e.Delta.Translation.X, e.Delta.Translation.Y);
+            }
+            else
+            {
+                view.AddTranslation(e.Delta.Translation.X, e.Delta.Translation.Y);
+            }
+#else
+            // Touch and mosue are disjoint in WPF? Just don't worry.
 #endif
         }
 
-        private void ResetMap()
-        {
-            this.roomDisplay.Text = "";
-            viewChildren.Children.Clear();
-
-            SetBaseRotation(-90 * 2 * Math.PI / 360);
-            SetScale(1);
-            SetTranslation();
-        }
-
-        private void SetViewForMap(BoundingRectangle buildingBounds)
-        {
-            ViewTransform.CenterX = buildingBounds.Width / 2;
-            ViewTransform.CenterY = buildingBounds.Height / 2;
-            view.Width = buildingBounds.Width;
-            view.Height = buildingBounds.Height;
-
-
-            Debug.WriteLine(-buildingBounds.CenterX + buildingBounds.Width / 2);
-
-            Canvas.SetLeft(viewChildren, -buildingBounds.CenterX + buildingBounds.Width / 2);
-            Canvas.SetTop(viewChildren, -buildingBounds.CenterY + buildingBounds.Height / 2);
-
-            //            Canvas.SetLeft(viewCenter, buildingBounds.Width / 2 - viewCenter.ActualWidth / 2);
-            //          Canvas.SetTop(viewCenter, buildingBounds.Height / 2 - viewCenter.ActualHeight / 2);
-            offsetx = buildingBounds.Width / 2;
-            offsety = buildingBounds.Height / 2;
-
-            double scaleDiff = Math.Min(this.overlay.ActualWidth / view.Width, this.overlay.ActualHeight / view.Width);
-            SetScale(scaleDiff * 0.7);
-
-#if NETFX_CORE
-            this.viewBackground.Source = new Windows.UI.Xaml.Media.Imaging.BitmapImage(new Uri(       
-                "http://dev.virtualearth.net/REST/v1/Imagery/Map/Road?ma=47.6403274536133,-122.126655578613,47.6408805847168,-122.125839233398&amp;key=Ai5yRVSgFDSI1LWQoL5fofxSrZuht2QmzXpE7Bj4eEyIPdLlIpZHpWNJEGsnFuVm"));
-#endif
-        }
-
-        double offsetx;
-        double offsety;
-
-        /// <summary>
-        /// Change the rotation angle in radians
-        /// </summary>
-        /// <param name="rot">Delta angle in radians</param>
-        /// <param name="fixedPointX">Point to remain fixed under rotation, relative to the center of the control.</param>
-        private void SetBaseRotation(double rot, Point fixedPoint = new Point())
-        {
-            double prevRot = ViewTransform.Rotation * 2 * Math.PI / 360;
-            double deltaRot = prevRot - rot;
-
-            // Get the location of the fixed point relative to the center of the view
-            double centerOffsetX = ViewTransform.TranslateX - fixedPoint.X;
-            double centerOffsetY = ViewTransform.TranslateY - fixedPoint.Y;
-
-            // Compute the change of the offset due to the rotation
-            double c = Math.Cos(deltaRot);
-            double s = Math.Sin(deltaRot);
-            double newTranslateX = ViewTransform.TranslateX + centerOffsetX * (c - 1) + centerOffsetY * s;
-            double newTranslateY = ViewTransform.TranslateY + centerOffsetY * (c - 1) - centerOffsetX * s;
-
-            // Shift the center so that the fixed point didn't move
-            SetTranslation(newTranslateX, newTranslateY);
-
-            ViewTransform.Rotation = rot * 360 / (2 * Math.PI);
-            var ar = (CompositeTransform)this.Resources["antiRotation"];
-            ar.Rotation = -ViewTransform.Rotation;
-        }
-
-
-        private void SetScale(double newScale = 1)
-        {
-            ViewTransform.ScaleX = newScale;
-            ViewTransform.ScaleY = newScale;
-        }
-
-        /// <summary>
-        /// Scale around the center of the screen
-        /// </summary>
-        private void ScaleIt(double newScale, double fixedPointX = 0, double fixedPointY = 0)
-        {
-            // Get the location of the fixed point relative to the center of the view
-            double centerOffsetX = ViewTransform.TranslateX - fixedPointX;
-            double centerOffsetY = ViewTransform.TranslateY - fixedPointY;
-            Debug.WriteLine(centerOffsetX + ", " + centerOffsetY);
-
-            // Compute the change of the offset due to the scaling
-            double newTranslateX = ViewTransform.TranslateX * newScale + fixedPointX * (1 - newScale);
-            double newTranslateY = ViewTransform.TranslateY * newScale + fixedPointY * (1 - newScale);
-
-            // Shift the center so that the fixed point didn't move
-            SetTranslation(newTranslateX, newTranslateY);
-
-            ViewTransform.ScaleX *= newScale;
-            ViewTransform.ScaleY *= newScale;
-        }
-
-        private void SetTranslation(double x = 0, double y = 0)
-        {
-            ViewTransform.TranslateX = x;
-            ViewTransform.TranslateY = y;
-        }
-
-        private void TranslateIt(double x, double y)
-        {
-            ViewTransform.TranslateX += x;
-            ViewTransform.TranslateY += y;
-        }
 
         private bool mouseDown;
         private FakePoint prevMouseLoc;
+        private bool isTagGenEnabled = false;
+
+        private void EnableTagGen(object sender, object e)
+        {
+            isTagGenEnabled = !isTagGenEnabled;
+        }
 
         private void Foo_MouseLeftButtonDown_1(object sender, FakePointerButtonEventArgs e)
         {
             FrameworkElement source = (FrameworkElement)sender;
             prevMouseLoc = GetPointerPoint(sender, e);
-            var thisPoint = new FakePoint2(prevMouseLoc.X - source.ActualWidth / 2 + offsetx, prevMouseLoc.Y - source.ActualHeight / 2 + offsety);
-            var inv = ViewTransform.Inverse;
-#if NETFX_CORE
-            var orig = inv.TransformPoint(thisPoint);
-#else
-            var orig = inv.Transform(thisPoint);
-#endif
-            Debug.WriteLine("Point p@ = new Point(" + orig.ToString() + ");");
-//            Canvas.SetLeft(CurrentLoc, orig.X - CurrentLoc.Width / 2);
-//            Canvas.SetTop(CurrentLoc, orig.Y - CurrentLoc.Height / 2);
+            if (isTagGenEnabled)
+            {
+                var geo = view.GetGeocordOfPoint(prevMouseLoc.X, prevMouseLoc.Y);
+                view.ShowScanLoc(geo.Y, geo.X);
+                string url = "https://jcookedemo.azure-mobile.net/api/getinfo?cp=" + geo.X.ToString("F5") + "," + geo.Y.ToString("F5") +
+                    "&bld=" + view.building.ToString() +
+                    "&flr=" + view.floor.ToString();
+                string tag = "http://chart.apis.google.com/chart?cht=qr&chs=120x120&chld=L&choe=ISO-8859-1&chl=" + Uri.EscapeDataString(url);
+                Debug.WriteLine(tag);
+            }
+
             mouseDown = true;
         }
 
+#if NETFX_CORE || WINDOWS_PHONE
         private void ShowLoc()
         {
-            RunOnUIThread(() =>
-            {
-                CurrentLoc.Visibility = (coordinate == null ? Visibility.Collapsed : Visibility.Visible);
-                if (coordinate != null)
-                {
-                    CurrentLoc.Width = coordinate.Accuracy * MetersToScreen();
-                    CurrentLoc.Height = coordinate.Accuracy * MetersToScreen();
-                    Point loc = GeolocToPoint(coordinate);
-                    Canvas.SetLeft(CurrentLoc, loc.X - CurrentLoc.Width / 2);
-                    Canvas.SetTop(CurrentLoc, loc.Y - CurrentLoc.Height / 2);
-                }
-            });
+            RunOnUIThread(() => view.UpdateCurrent(coordinate));
         }
-
-        // TODO: These should be part of the map metadata.
-        private Point GeolocToPoint(Geocoordinate coord)
-        {
-            Debug.WriteLine("Point geo@ = new Point(" + coord.Latitude + ", " + coord.Longitude + ");");
-
-            Point geo1 = new Point(47.6403274536133, -122.126655578613);
-            Point geo2 = new Point(47.6408805847168, -122.125839233398);
-            Point p1 = new Point(-2.71354556083679, -4.37648582458496);
-            Point p2 = new Point(133.738830566406, 132.851181030273);
-
-            double fX2 = (coord.Latitude - geo1.X) / (geo2.X - geo1.X);
-            double fY2 = (coord.Longitude - geo1.Y) / (geo2.Y - geo1.Y);
-            double pX = p1.X * (1 - fX2) + p2.X * fX2;
-            double pY = p1.Y * (1 - fY2) + p2.Y * fY2;
-            Point pRet = new Point(pX, pY);
-
-            return pRet;
-        }
-        private double MetersToScreen()
-        {
-            return 2.5;
-        }
+#endif
 
         private void Foo_MouseMove_1(object sender, FakePointerEventArgs e)
         {
             if (mouseDown)
             {
                 var last = GetPointerPoint(sender, e);
-                TranslateIt(last.X - prevMouseLoc.X, last.Y - prevMouseLoc.Y);
+
+#if !WINDOWS_PHONE
+                if (this.fineTuneLocation.IsChecked.Value)
+                {
+                    view.OffsetTranslate(last.X - prevMouseLoc.X, last.Y - prevMouseLoc.Y);
+                }
+                else
+#endif
+                {
+                    view.AddTranslation(last.X - prevMouseLoc.X, last.Y - prevMouseLoc.Y);
+                }
                 prevMouseLoc = last;
             }
         }
@@ -456,8 +421,33 @@ namespace MeetWhere
         {
             FrameworkElement source = (FrameworkElement)sender;
             var point = e.GetPosition(source);
-            ScaleIt(1.4, point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2);
+            view.AddScale(1.4, point.X - source.ActualWidth / 2, point.Y - source.ActualHeight / 2);
             e.Handled = true;
+        }
+
+        private void ZoomIn(object sender, object e)
+        {
+            double newScale = 1.1;
+            view.AddScale(newScale);
+        }
+
+        private void ZoomOut(object sender, object e)
+        {
+            double newScale = 0.9;
+            view.AddScale(newScale);
+        }
+
+        private double rot = 0;
+        private void RotateRight(object sender, object e)
+        {
+            rot -= 45 * Math.PI / 360;
+            view.SetBaseRotation(rot);
+        }
+
+        private void RotateLeft(object sender, object e)
+        {
+            rot += 45 * Math.PI / 360; ;
+            view.SetBaseRotation(rot);
         }
 
         private async void SearchLocationButton(object sender, object e)
@@ -468,9 +458,13 @@ namespace MeetWhere
             {
                 Waiter(true);
                 var tcs = new TaskCompletionSource<object>();
+
+                InputScope ins = new InputScope();
+                ins.Names.Add(new InputScopeName() { NameValue = InputScopeNameValue.TelephoneNumber });
                 TextBox roomNumber = new TextBox()
                 {
                     Text = "2 2102",
+                    InputScope = ins,
                     BorderBrush = new SolidColorBrush(Colors.Gray)
                 };
 
@@ -518,6 +512,7 @@ namespace MeetWhere
             CloudAccesser.ClearCachedMaps();
         }
 
+#if WINDOWS_PHONE || NETFX_CORE
         private void GpsButton(object sender, object e)
         {
             MessageBoxShow("Status: " + status.ToString() + "\n" +
@@ -530,7 +525,9 @@ namespace MeetWhere
                  "Latitude: " + coordinate.Latitude + "\n" +
                  "Longitude: " + coordinate.Longitude));
         }
+#endif
 
+#if NETFX_CORE || WINDOWS_PHONE
         private async void LoginButton(object sender, object e)
         {
             if (CloudAccesser.IsLoggedin())
@@ -564,7 +561,7 @@ namespace MeetWhere
             {
                 loginButton.Content = "login";
             }
-#else
+#elif WINDOWS_PHONE
             var loginButton = ApplicationBar.Buttons.OfType<ApplicationBarIconButton>().First(p => p.Text == "login" || p.Text == "logout");
             if (CloudAccesser.IsLoggedin())
             {
@@ -578,33 +575,7 @@ namespace MeetWhere
             }
 #endif
         }
-
-
-        private void ZoomIn(object sender, object e)
-        {
-            double newScale = 1.1;
-            ScaleIt(newScale);
-        }
-
-        private void ZoomOut(object sender, object e)
-        {
-            double newScale = 0.9;
-            ScaleIt(newScale);
-        }
-
-        private double rot = 0;
-        private void RotateRight(object sender, object e)
-        {
-            rot -= 45 * Math.PI / 360;
-            SetBaseRotation(rot);
-        }
-
-        private void RotateLeft(object sender, object e)
-        {
-            rot += 45 * Math.PI / 360; ;
-            SetBaseRotation(rot);
-        }
-
+#endif
         private void AboutButton(object sender, object e)
         {
             MessageBoxShow("meet where?\n\nAuthor: Jason Cooke\njcooke@microsoft.com");
@@ -614,7 +585,7 @@ namespace MeetWhere
 
         private Task RunOnUIThread(Action agileCallback)
         {
-#if !NETFX_CORE
+#if WINDOWS_PHONE
             var tcs = new TaskCompletionSource<object>();
             System.Threading.Thread t = new System.Threading.Thread(() =>
                 Dispatcher.BeginInvoke(() =>
@@ -625,8 +596,20 @@ namespace MeetWhere
             );
             t.Start();
             return tcs.Task;
-#else
+#elif NETFX_CORE
             return Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => agileCallback()).AsTask();
+#else
+            var tcs = new TaskCompletionSource<object>();
+            System.Threading.Thread t = new System.Threading.Thread(() =>
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    agileCallback();
+                    tcs.SetResult(null);
+                }))
+            );
+            t.Start();
+            return tcs.Task;
+
 #endif
         }
 
@@ -654,7 +637,324 @@ namespace MeetWhere
         }
         #endregion
 
-#if NETFX_CORE
+        private void saveLocationInfo_Click(object sender, RoutedEventArgs e)
+        {
+            CloudAccesser.SaveMapMetadata(view.MapMetadata);
+        }
+
+        async private void enterLocationCoords_click(object sender, RoutedEventArgs e)
+        {
+            Tuple<double, double> geoloc = null;
+
+            try
+            {
+                Waiter(true);
+                var tcs = new TaskCompletionSource<object>();
+                TextBox coordString = new TextBox()
+                {
+                    BorderBrush = new SolidColorBrush(Colors.Gray)
+                };
+
+                CustomMessageBox messageBox = new CustomMessageBox()
+                {
+                    Title = "Map center coords",
+                    Message = "Enter coords, in the form '46.0344, -123.1152'",
+                    Content = coordString,
+                    LeftButtonContent = "OK",
+                    RightButtonContent = "Cancel",
+                    IsFullScreen = false,
+                };
+
+                messageBox.Dismissed += (s2, e2) =>
+                {
+                    if (e2.Result == CustomMessageBoxResult.LeftButton && !string.IsNullOrEmpty(coordString.Text))
+                    {
+                        var parts = coordString.Text.Split(',').Select(p => p.Trim()).ToArray();
+                        if (parts.Length != 2) return;
+
+                        double latitude;
+                        if (!double.TryParse(parts[0], out latitude)) return;
+
+                        double longitude;
+                        if (!double.TryParse(parts[1], out longitude)) return;
+
+                        geoloc = new Tuple<double, double>(latitude, longitude);
+                    }
+                };
+
+                messageBox.Unloaded += (s2, e2) => tcs.SetResult(null);
+                messageBox.Show();
+                await tcs.Task;
+
+                if (geoloc != null)
+                {
+                    var mmd = view.MapMetadata;
+                    mmd.CenterLat = geoloc.Item1;
+                    mmd.CenterLong = geoloc.Item2;
+                    view.MapMetadata = mmd;
+                }
+            }
+            finally
+            {
+                Waiter(false);
+            }
+        }
+
+#if WINDOWS_PHONE || NETFX_CORE
+#if WINDOWS_PHONE
+        PhotoCaptureDevice Device = null;
+        WriteableBitmap wbm = null;
+#endif
+
+        private async void ScanButton(object sender, object e)
+        {
+            string result = null;
+
+            try
+            {
+                Waiter(true);
+                var tcs = new TaskCompletionSource<object>();
+
+                StackPanel sp = new StackPanel() { Margin = new Thickness(20) };
+
+#if WINDOWS_PHONE
+
+                if (Device == null)
+                {
+                    Windows.Foundation.Size initialResolution = new Windows.Foundation.Size(640, 480);
+                    wbm = new WriteableBitmap(640, 480);
+                    Device = await PhotoCaptureDevice.OpenAsync(CameraSensorLocation.Back, initialResolution);
+                    Device.SetProperty(KnownCameraGeneralProperties.EncodeWithOrientation,
+                                  Device.SensorLocation == CameraSensorLocation.Back ?
+                                  Device.SensorRotationInDegrees : -Device.SensorRotationInDegrees);
+                    Device.SetProperty(KnownCameraGeneralProperties.AutoFocusRange, AutoFocusRange.Macro);
+                    Device.SetProperty(KnownCameraPhotoProperties.SceneMode, CameraSceneMode.Macro);
+                    Device.SetProperty(KnownCameraPhotoProperties.FocusIlluminationMode, FocusIlluminationMode.Off);
+                }
+
+                Rectangle previewRect = new Rectangle() { Height = 480, Width = 360 };
+                VideoBrush previewVideo = new VideoBrush();
+                previewVideo.RelativeTransform = new CompositeTransform()
+                {
+                    CenterX = 0.5,
+                    CenterY = 0.5,
+                    Rotation = (Device.SensorLocation == CameraSensorLocation.Back ?
+                        Device.SensorRotationInDegrees : -Device.SensorRotationInDegrees)
+                };
+                previewVideo.SetSource(Device);
+                previewRect.Fill = previewVideo;
+
+                Grid combiner = new Grid() { Height = previewRect.Height, Width = previewRect.Width };
+                combiner.Children.Add(previewRect);
+                Grid.SetColumnSpan(previewRect, 3);
+                Grid.SetRowSpan(previewRect, 3);
+
+                int windowSize = 100;
+                combiner.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(previewRect.Height / 2 - windowSize) });
+                combiner.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(windowSize) });
+                combiner.RowDefinitions.Add(new RowDefinition() { Height = new GridLength(previewRect.Height / 2 - windowSize) });
+                combiner.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(previewRect.Width / 2 - windowSize) });
+                combiner.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(windowSize) });
+                combiner.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(previewRect.Width / 2 - windowSize) });
+                var maskBrush = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
+                Canvas v1 = new Canvas() { Background = maskBrush };
+                Canvas v2 = new Canvas() { Background = maskBrush };
+                Canvas v3 = new Canvas() { Background = maskBrush };
+                Canvas v4 = new Canvas() { Background = maskBrush };
+                combiner.Children.Add(v1); Grid.SetRow(v1, 0); Grid.SetColumnSpan(v1, 3);
+                combiner.Children.Add(v2); Grid.SetRow(v2, 2); Grid.SetColumnSpan(v2, 3);
+                combiner.Children.Add(v3); Grid.SetRow(v3, 1); Grid.SetColumn(v3, 0);
+                combiner.Children.Add(v4); Grid.SetRow(v4, 1); Grid.SetColumn(v4, 2);
+                sp.Children.Add(combiner);
+
+                BackgroundWorker bw = new BackgroundWorker();
+                DateTime last = DateTime.Now;
+
+                bw.WorkerSupportsCancellation = true;
+                bw.DoWork += async (s2, e2) =>
+                {
+                    var reader = new BarcodeReader();
+                    while (!bw.CancellationPending)
+                    {
+                        if (DateTime.Now.Subtract(last).TotalSeconds > 2)
+                        {
+                            await Device.FocusAsync();
+                            last = DateTime.Now;
+                        }
+
+                        try
+                        {
+                            Device.GetPreviewBufferArgb(wbm.Pixels);
+                            Debug.WriteLine(DateTime.Now.Millisecond);
+                            var codeVal = reader.Decode(wbm);
+                            if (codeVal != null)
+                            {
+                                result = codeVal.Text;
+                                e2.Cancel = true;
+                                tcs.TrySetResult(null);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.ToString());
+                        }
+                    }
+                };
+
+                bw.RunWorkerAsync();
+
+#else
+                var cameras = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+                if (cameras.Count < 1)
+                {
+                    return;
+                }
+
+                var settings = new MediaCaptureInitializationSettings { VideoDeviceId = cameras.Last().Id };
+                var imageSource = new MediaCapture();
+                await imageSource.InitializeAsync(settings);
+                CaptureElement previewRect = new CaptureElement() { Width = 640, Height = 360 };
+                previewRect.Source = imageSource;
+                sp.Children.Add(previewRect);
+                await imageSource.StartPreviewAsync();
+
+                bool keepGoing = true;
+                Action a = null;
+                a = async () =>
+                {
+                    if (!keepGoing) return;
+                    var stream = new InMemoryRandomAccessStream();
+                    await imageSource.CapturePhotoToStreamAsync(ImageEncodingProperties.CreateJpeg(), stream);
+
+                    stream.Seek(0);
+
+                    var tmpBmp = new WriteableBitmap(1, 1);
+                    await tmpBmp.SetSourceAsync(stream);
+                    var writeableBmp = new WriteableBitmap(tmpBmp.PixelWidth, tmpBmp.PixelHeight);
+                    stream.Seek(0);
+                    await writeableBmp.SetSourceAsync(stream);
+
+                    Result _result = null;
+
+                    var barcodeReader = new BarcodeReader
+                    {
+                        // TryHarder = true,
+                        AutoRotate = true
+                    };
+
+                    try
+                    {
+                        _result = barcodeReader.Decode(writeableBmp);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex.ToString());
+                    }
+
+                    stream.Dispose();
+
+                    if (_result != null)
+                    {
+                        result = _result.Text;
+                        Debug.WriteLine(_result.Text);
+                        keepGoing = false;
+                        tcs.TrySetResult(null);
+                    }
+                    else
+                    {
+                        var x = RunOnUIThread(a);
+                    }
+                };
+
+                await RunOnUIThread(a);
+#endif
+
+                CustomMessageBox messageBox = new CustomMessageBox()
+                {
+                    Title = "Scan Tag",
+                    Message = "",
+                    Content = sp,
+                    LeftButtonContent = "OK",
+                    RightButtonContent = "Cancel",
+                    IsFullScreen = false,
+                };
+
+                messageBox.Unloaded += (s2, e2) =>
+                {
+                    tcs.TrySetResult(null);
+                };
+                messageBox.Show();
+
+                await tcs.Task;
+
+                messageBox.Dismiss();
+#if WINDOWS_PHONE
+                bw.CancelAsync();
+#else
+                keepGoing = false;
+                await imageSource.StopPreviewAsync();
+#endif
+
+                Debug.WriteLine("result: '" + result + "'");
+                string loc = null;
+                string building = null;
+                string floor = null;
+                string room = null;
+
+                if (!string.IsNullOrEmpty(result))
+                {
+                    var s = result.Split(new char[] { '?' }, 2);
+                    if (s.Length == 2)
+                    {
+                        var paramList = s[1].Split('&')
+                            .Select(p => p.Split(new char[] { '=' }, 2))
+                            .Where(p => p.Length == 2);
+                        loc = pick(paramList, "cp");
+                        building = pick(paramList, "bld");
+                        floor = pick(paramList, "flr");
+                        room = pick(paramList, "rm");
+                    }
+                }
+
+                double? lat = null;
+                double? lon = null;
+                if (loc != null)
+                {
+                    var x = loc.Split(',');
+                    if (x.Length == 2)
+                    {
+                        double tmp;
+                        if (double.TryParse(x[0], out tmp))
+                        {
+                            lon = tmp;
+                        }
+
+                        if (double.TryParse(x[1], out tmp))
+                        {
+                            lat = tmp;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(building) && !string.IsNullOrEmpty(floor))
+                {
+                    await ShowMap(RoomInfo.Parse(building + "/" + (room == null ? floor : room)), lat, lon);
+                }
+            }
+            finally
+            {
+                Waiter(false);
+            }
+        }
+
+        private static string pick(IEnumerable<string[]> paramList, string key)
+        {
+            return paramList.Where(p => p[0] == key).Select(p => p[1]).FirstOrDefault();
+        }
+
+#endif
+
+#if NETFX_CORE // !WINDOWS_PHONE
         private void overlay_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
         {
             Debug.WriteLine("overlay_ManipulationStarted: " + e.ToString());
@@ -663,47 +963,16 @@ namespace MeetWhere
         private void overlay_ManipulationCompleted(object sender, ManipulationCompletedRoutedEventArgs e)
         {
             Debug.WriteLine("overlay_ManipulationCompleted: " + e.ToString());
-
         }
 
         private void overlay_ManipulationDelta(object sender, ManipulationDeltaRoutedEventArgs e)
         {
             Debug.WriteLine("overlay_ManipulationDelta: " + e.ToString());
-
         }
 
         private void overlay_ManipulationStarting(object sender, ManipulationStartingRoutedEventArgs e)
         {
             Debug.WriteLine("overlay_ManipulationStarting: " + e.ToString());
-            switch (e.Mode)
-            {
-                case ManipulationModes.All:
-                    break;
-                case ManipulationModes.None:
-                    break;
-                case ManipulationModes.Rotate:
-                    break;
-                case ManipulationModes.RotateInertia:
-                    break;
-                case ManipulationModes.Scale:
-                    break;
-                case ManipulationModes.ScaleInertia:
-                    break;
-                case ManipulationModes.System:
-                    break;
-                case ManipulationModes.TranslateInertia:
-                    break;
-                case ManipulationModes.TranslateRailsX:
-                    break;
-                case ManipulationModes.TranslateRailsY:
-                    break;
-                case ManipulationModes.TranslateX:
-                    break;
-                case ManipulationModes.TranslateY:
-                    break;
-                default:
-                    break;
-            }
         }
 
         private void overlay_ManipulationInertiaStarting(object sender, ManipulationInertiaStartingRoutedEventArgs e)

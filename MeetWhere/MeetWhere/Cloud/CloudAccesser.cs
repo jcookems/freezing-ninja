@@ -8,25 +8,78 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Threading;
+using MeetWhere.XPlat;
 
 #if NETFX_CORE
-using Windows.UI.Popups;
-using Windows.Storage.Pickers;
 using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.UI.Popups;
 using Windows.UI.ViewManagement;
 using Newtonsoft.Json;
-#endif
-
-#if !NETFX_CORE
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml;
+#else
 using System.IO.IsolatedStorage;
 using System.Windows;
+using System.Windows.Controls;
+#endif
+#if WINDOWS_PHONE
+using Microsoft.Phone.Controls;
 #endif
 
 namespace MeetWhere.Cloud
 {
     static class CloudAccesser
     {
-        private static MobileServiceClient service = new MobileServiceClient("https://jcookedemo.azure-mobile.net/");
+        private static MobileServiceClient _service = null;
+
+        private static MobileServiceClient service
+        {
+            get
+            {
+                string appKey = null;
+                if (_service == null)
+                {
+                    // Set the install ID first.
+#if NETFX_CORE || WINDOWS_PHONE
+#if NETFX_CORE
+                    Windows.Storage.ApplicationData.Current.LocalSettings.Values
+#else
+                    IsolatedStorageSettings.ApplicationSettings
+#endif
+["MobileServices.Installation.config"] =
+                            @"{ ""applicationInstallationId"": ""No Unique Device ID for you!"" }";
+#else // Win desktop
+                    using (IsolatedStorageFile isoStore = IsolatedStorageFile.GetStore(
+                        IsolatedStorageScope.Assembly | IsolatedStorageScope.User, null, null))
+                    {
+                        using (IsolatedStorageFileStream fileStream = isoStore.OpenFile(
+                            "applicationInstallationId", FileMode.OpenOrCreate, FileAccess.Write))
+                        {
+                            using (var writer = new StreamWriter(fileStream))
+                            {
+                                writer.WriteLine(@"{ ""applicationInstallationId"": ""No Unique Device ID for you!"" }");
+                            }
+                        }
+                    }
+                    appKey = "ZDGayNoTiIChnLUmElbrCKwywbgKtE49";
+#endif
+
+                    _service = new MobileServiceClient("https://jcookedemo.azure-mobile.net/", appKey, new MyHandler()
+
+#if !NETFX_CORE && !WINDOWS_PHONE
+, new CustomParametersServiceFilter()
+#endif
+);
+                }
+                return _service;
+            }
+        }
+
+#if NETFX_CORE || WINDOWS_PHONE
         private static LiveAuthClient liveIdClient = new LiveAuthClient(
 #if NETFX_CORE
 "https://jcookedemo.azure-mobile.net/"
@@ -34,54 +87,97 @@ namespace MeetWhere.Cloud
 "00000000440F59EB"
 #endif
 );
+#endif
 
-        private static LiveConnectSession session;
+        public class MyHandler : DelegatingHandler
+        {
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                Debug.WriteLine("Installation id: " + String.Join(";", request.Headers.FirstOrDefault(p => p.Key == "X-ZUMO-INSTALLATION-ID").Value.ToArray()));
+                return await base.SendAsync(request, cancellationToken);
+            }
+        }
+
+#if !NETFX_CORE && !WINDOWS_PHONE
+        public class CustomParametersServiceFilter : DelegatingHandler
+        {
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                // Get previous uri query
+                var uriBuilder = new UriBuilder(request.RequestUri);
+                uriBuilder.Query = (uriBuilder.Query == null ? "" : uriBuilder.Query.TrimStart('?') + "&") + "noAuth=MyMagicKey";
+                request.RequestUri = uriBuilder.Uri;
+                return await base.SendAsync(request, cancellationToken);
+            }
+        }
+#endif
+
+#if NETFX_CORE || WINDOWS_PHONE
+        private static LiveConnectSession session = null;
+#endif
         private static string foldername = "Maps";
 
         public static async void ClearCachedMaps()
         {
-            bool ok = true;
-#if NETFX_CORE
-            Windows.Storage.StorageFolder localFolder = Windows.Storage.ApplicationData.Current.LocalFolder;
+            bool ok = await Cache.DeleteFolder(foldername);
+            await UI.MessageBoxShow((ok ? "Successfully cleaned" : "Error cleaning") + " the cache");
+        }
+
+        async static public Task<MapMetadata> LoadMapMetadata(RoomInfo location)
+        {
+            var mapMetadataTable = service.GetTable<MapMetadata>();
+            MapMetadata y = null;
             try
             {
-                var mapsFolder = await localFolder.GetFolderAsync(foldername);
-                foreach (var z in await mapsFolder.GetFilesAsync())
-                {
-                    try
-                    {
-                        var tmp = z.DeleteAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex.ToString());
-                        ok = false;
-                    }
-                }
+                var x = await mapMetadataTable.Where(p => p.Building == location.Building && p.Floor == location.Floor).ToListAsync();
+                y = x.Where(p => p.Id.HasValue).OrderByDescending(p => p.Id).FirstOrDefault();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.ToString());
-                ok = false;
             }
-#else
-            IsolatedStorageFile store = IsolatedStorageFile.GetUserStoreForApplication();
-            foreach (string s in store.GetFileNames("Maps/*"))
+
+            if (y == null)
             {
                 try
                 {
-                    store.DeleteFile("Maps/" + s);
+                    var x = await mapMetadataTable.Where(p => p.Building == location.Building).ToListAsync();
+                    y = x.Where(p => p.Id.HasValue).OrderByDescending(p => p.Id).FirstOrDefault();
+                    // Need to fix up the fields to make unique
+                    y.Id = null;
+                    y.Floor = location.Floor;
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine(ex.ToString());
-                    ok = false;
                 }
             }
-            await DummyTask();
-#endif
 
-            await MessageBoxShow((ok ? "Successfully cleaned" : "Error cleaning") + " the cache");
+            if (y == null)
+            {
+                // Start with some defaults.
+                y = new MapMetadata()
+                {
+                    Building = location.Building,
+                    Floor = location.Floor,
+                    CenterLat = 47.636425,
+                    CenterLong = -122.133110,
+                    MapSize = 300,
+                    GeoSize = 0.0004,
+                    Angle = 90,
+                    Scale = 1.53418608096759,
+                    OffsetX = -117.849160438776,
+                    OffsetY = 143.735496115895,
+                };
+            }
+
+            return y;
+        }
+
+        async static public void SaveMapMetadata(MapMetadata mapMetadata)
+        {
+            var mapMetadataTable = service.GetTable<MapMetadata>();
+            await mapMetadataTable.InsertAsync(mapMetadata);
         }
 
         async static public Task<string> LoadMapSvg(RoomInfo location, Action<bool> waiter)
@@ -90,44 +186,17 @@ namespace MeetWhere.Cloud
             waiter(true);
             try
             {
-#if NETFX_CORE
-                string filename = location.Building + "-" + location.Floor + ".svg";
-                Windows.Storage.StorageFolder localFolder = Windows.Storage.ApplicationData.Current.LocalFolder;
-                try
-                {
-                    var folders = await localFolder.GetFoldersAsync();
-                    var mapsFolder = folders.FirstOrDefault(p => p.Name == foldername);
-                    if (mapsFolder != null)
-                    {
-                        var file = await mapsFolder.GetFileAsync(filename);
-                        if (file != null)
-                        {
-                            var content = (await file.OpenSequentialReadAsync()).AsStreamForRead();
-                            string svgDocContent = new System.IO.StreamReader(content).ReadToEnd();
-                            return svgDocContent;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.ToString());
-                }
-#else
-                string filename = foldername + "/" + location.Building + "-" + location.Floor + ".svg";
-                IsolatedStorageFile store = IsolatedStorageFile.GetUserStoreForApplication();
-                if (store.FileExists(filename))
-                {
-                    var content = store.OpenFile(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                    string svgDocContent = new System.IO.StreamReader(content).ReadToEnd();
-                    return svgDocContent;
-                }
-#endif
+                string fileName = location.Building + "-" + location.Floor + ".svg";
+                string content = await Cache.ReadFileContent(foldername, fileName);
+                if (!string.IsNullOrEmpty(content)) return content;
 
+#if NETFX_CORE || WINDOWS_PHONE
                 // Not in cache, so need to access files on server.
                 if (!await TryLogin())
                 {
                     return null;
                 }
+#endif
 
                 // OK, user has permission so lets try to get the data from the server.
                 var mapTable = service.GetTable<Map>();
@@ -143,7 +212,7 @@ namespace MeetWhere.Cloud
 
                 if (maps == null || maps.Count() == 0)
                 {
-                    await MessageBoxShow("Server does not have a map for: " + location.ToString());
+                    await UI.MessageBoxShow("Server does not have a map for: " + location.ToString());
 #if !NETFX_CORE
                     return null;
 #else
@@ -153,19 +222,20 @@ namespace MeetWhere.Cloud
                     // FilePicker APIs will not work if the application is in a snapped state.
                     if (ApplicationView.Value == ApplicationViewState.Snapped)
                     {
-                        await MessageBoxShow("Cannot browse files when snapped");
+                        await UI.MessageBoxShow("Cannot browse files when snapped");
                         return null;
                     }
 
                     FileOpenPicker openPicker = new FileOpenPicker();
                     openPicker.ViewMode = PickerViewMode.List;
                     openPicker.SuggestedStartLocation = PickerLocationId.Desktop;
-                    openPicker.FileTypeFilter.Add(".htm");
+                    openPicker.FileTypeFilter.Add(".vdx");
+                    openPicker.CommitButtonText = "File for " + location.Building + "/" + location.Floor;
 
                     StorageFile file = await openPicker.PickSingleFileAsync();
                     if (file == null)
                     {
-                        await MessageBoxShow("Did not select file");
+                        await UI.MessageBoxShow("Did not select file");
                         return null;
                     }
 
@@ -173,14 +243,18 @@ namespace MeetWhere.Cloud
                     string content0 = new StreamReader(s.AsStreamForRead()).ReadToEnd();
 
                     // Verify that the file is OK before uploading.
-                    var mapObjects = Mapper.Parser.SvgParser.ParseSvgDoc(location, content0);
+                    //                    var mapObjects = Mapper.Parser.SvgParser.ParseSvgDoc(location, content0);
+                    var mapObjects = Mapper.Parser.VisioParser.ParseVisioDoc(location, content0);
+                    // Filter out some of the greebles
+                    mapObjects = mapObjects.Where(p => p.Parent == Mapper.ParentType.Labels || p.Parent == Mapper.ParentType.Rooms);
+
                     var mapObjectsJson = JsonConvert.SerializeObject(mapObjects, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
 
                     var chunks = Chunker(mapObjectsJson, 1024 * 128);
 
                     for (int i = 0; i < chunks.Length; i++)
                     {
-                        var newMap = new Map() { Floor = location.Floor, Building = location.Building, Part = i, SVG = chunks[i] };
+                        var newMap = new Map() { Floor = location.Floor, Building = location.Building, Part = i, Description = chunks[i] };
                         Debug.WriteLine("inserting " + i + " of " + chunks.Length + " for " + location.Building + "/" + location.Floor);
                         try
                         {
@@ -196,49 +270,15 @@ namespace MeetWhere.Cloud
                     maps = await mapTable.Where(p => p.Building == location.Building && p.Floor == location.Floor).ToListAsync();
                     if (maps.Count() == 0)
                     {
-                        await MessageBoxShow("Still wrong!");
+                        await UI.MessageBoxShow("Still wrong!");
                         return null;
                     }
 #endif
                 }
 
                 // Map is on the server
-                string svg = string.Join("", maps.OrderBy(p => p.Part).Select(p => p.SVG));
-
-#if !NETFX_CORE
-                if (!store.DirectoryExists("Maps"))
-                {
-                    store.CreateDirectory("Maps");
-                }
-
-                var content2 = store.OpenFile(filename, FileMode.OpenOrCreate, FileAccess.Write);
-                byte[] bytes = Encoding.UTF8.GetBytes(svg);
-                content2.Write(bytes, 0, bytes.Length);
-                content2.Flush();
-                content2.Close();
-#else
-                try
-                {
-                    var folders = await localFolder.GetFoldersAsync();
-                    var mapsFolder = folders.FirstOrDefault(p => p.Name == foldername);
-                    if (mapsFolder == null)
-                    {
-                        mapsFolder = await localFolder.CreateFolderAsync(foldername);
-                    }
-
-                    var file = await mapsFolder.CreateFileAsync(filename);
-                    Stream content2 = await file.OpenStreamForWriteAsync();
-                    byte[] bytes = Encoding.UTF8.GetBytes(svg);
-                    content2.Write(bytes, 0, bytes.Length);
-                    content2.Flush();
-                    content2.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.ToString());
-                }
-#endif
-
+                string svg = string.Join("", maps.OrderBy(p => p.Part).Select(p => p.Description));
+                await Cache.WriteFileContent(foldername, fileName, svg);
                 return svg;
             }
             finally
@@ -264,6 +304,7 @@ namespace MeetWhere.Cloud
         }
 #endif
 
+#if NETFX_CORE || WINDOWS_PHONE
         private static Dictionary<string, MobileServiceAuthenticationProvider?> providers = new Dictionary<string, MobileServiceAuthenticationProvider?>() {
             {"Microsoft", MobileServiceAuthenticationProvider.MicrosoftAccount},
             {"Google", MobileServiceAuthenticationProvider.Google},
@@ -278,19 +319,20 @@ namespace MeetWhere.Cloud
         {
             if (session == null)
             {
-#if !NETFX_CORE
-                if (IsolatedStorageSettings.ApplicationSettings.Contains("CachedLoginToken"))
+                string token = Cache.GetSetting("CachedLoginToken");
+                if (token != null)
                 {
-                    string token = (string)IsolatedStorageSettings.ApplicationSettings["CachedLoginToken"];
                     try
                     {
-                        MobileServiceUser loginResult = await service.LoginAsync(token);
+                        MobileServiceUser loginResult = await service.LoginAsync(
+                            MobileServiceAuthenticationProvider.MicrosoftAccount,
+                            new JObject(new JProperty("authenticationToken", token)));
 
                         if (!quiet)
                         {
                             string title = string.Format("Welcome!");
                             var message = string.Format("You are now logged in - {0}", loginResult.UserId);
-                            await MessageBoxShow(message, title);
+                            await UI.MessageBoxShow(message, title);
                         }
                         return true;
                     }
@@ -299,7 +341,6 @@ namespace MeetWhere.Cloud
                         Debug.WriteLine(ex.ToString());
                     }
                 }
-#endif
 
                 LiveLoginResult result = await liveIdClient.LoginAsync(new[] { "wl.signin" });
                 if (result.Status == LiveConnectSessionStatus.Connected)
@@ -307,38 +348,28 @@ namespace MeetWhere.Cloud
                     session = result.Session;
                     LiveConnectClient client = new LiveConnectClient(result.Session);
                     LiveOperationResult meResult = await client.GetAsync("me");
-                    string token = result.Session.AuthenticationToken;
-
-#if !NETFX_CORE
-                    IsolatedStorageSettings.ApplicationSettings["CachedLoginToken"] = token;
-                    IsolatedStorageSettings.ApplicationSettings.Save();
-#endif
-
-                    MobileServiceUser loginResult = await service.
-#if NETFX_CORE
-LoginWithMicrosoftAccountAsync
-#else
-LoginAsync
-#endif
-(token);
+                    token = result.Session.AuthenticationToken;
+                    Cache.SetSetting("CachedLoginToken", token);
+                    MobileServiceUser loginResult = await service.LoginAsync(
+                        MobileServiceAuthenticationProvider.MicrosoftAccount,
+                        new JObject(new JProperty("authenticationToken", token)));
 
                     if (!quiet)
                     {
                         string title = string.Format("Welcome {0}!", meResult.Result["first_name"]);
                         var message = string.Format("You are now logged in - {0}", loginResult.UserId);
-                        await MessageBoxShow(message, title);
+                        await UI.MessageBoxShow(message, title);
                     }
                 }
                 else
                 {
                     if (!quiet)
                     {
-                        await MessageBoxShow("Could not log in automatically!");
+                        await UI.MessageBoxShow("Could not log in automatically!");
                     }
                     session = null;
                 }
             }
-
             return session == null;
         }
 
@@ -347,7 +378,7 @@ LoginAsync
             if (service.CurrentUser == null)
             {
                 // Try to log in
-                MobileServiceAuthenticationProvider? provider = null; //  await PickProvider();
+                MobileServiceAuthenticationProvider? provider = await PickProvider();
                 if (!provider.HasValue)
                 {
                     return false;
@@ -365,7 +396,7 @@ LoginAsync
 
             if (service.CurrentUser == null)
             {
-                await MessageBoxShow("You must log in. Login Required");
+                await UI.MessageBoxShow("You must log in. Login Required");
                 return false;
             }
 
@@ -384,7 +415,7 @@ LoginAsync
 
                 if (appUsers.Count() != 1)
                 {
-                    await MessageBoxShow("registration failed");
+                    await UI.MessageBoxShow("registration failed");
                     return false;
                 }
             }
@@ -395,40 +426,11 @@ LoginAsync
             {
                 appUser.IsAuthorized = true;
                 await appUserTable.UpdateAsync(appUser);
-                await MessageBoxShow("You have not been authorized yet. Try again later");
+                await UI.MessageBoxShow("You have not been authorized yet. Try again later");
                 return false;
             }
 
             return true;
-        }
-
-        private static Task MessageBoxShow(string message)
-        {
-#if NETFX_CORE
-            MessageDialog dlg = new Windows.UI.Popups.MessageDialog(message);
-            return dlg.ShowAsync().AsTask();
-#else
-            MessageBox.Show(message);
-            return DummyTask();
-#endif
-        }
-
-        private static Task MessageBoxShow(string message, string title)
-        {
-#if NETFX_CORE
-            MessageDialog dlg = new Windows.UI.Popups.MessageDialog(message, title);
-            return dlg.ShowAsync().AsTask();
-#else
-            MessageBox.Show(message, title, MessageBoxButton.OK);
-            return DummyTask();
-#endif
-        }
-
-        private static Task<object> DummyTask()
-        {
-            var t = new Task<object>(() => null);
-            t.Start();
-            return t;
         }
 
         public static bool IsLoggedin()
@@ -436,121 +438,113 @@ LoginAsync
             return (service.CurrentUser != null);
         }
 
-        //        private static Task<MobileServiceAuthenticationProvider?> PickProvider()
-        //        {
-        //            var tcs = new TaskCompletionSource<MobileServiceAuthenticationProvider?>();
-        //            MobileServiceAuthenticationProvider? value = null;
+        private static Task<MobileServiceAuthenticationProvider?> PickProvider()
+        {
+            var tcs = new TaskCompletionSource<MobileServiceAuthenticationProvider?>();
+            MobileServiceAuthenticationProvider? value = null;
 
-        //            //            ListPicker listPicker = new ListPicker() {
-        //            //                Header = "Available providers:",
-        //            ListBox listPicker = new ListBox()
-        //            {
-        //                ItemsSource = providers.Keys,
-        //                Margin = new Thickness(12, 42, 24, 18)
-        //            };
+            //            ListPicker listPicker = new ListPicker() {
+            //                Header = "Available providers:",
+            ListBox listPicker = new ListBox()
+            {
+                ItemsSource = providers.Keys,
+                Margin = new Thickness(12, 42, 24, 18)
+            };
 
-        //            CustomMessageBox messageBox = new CustomMessageBox()
-        //            {
-        //                Title = "Login Required",
-        //                Message = "Choose which provider to use",
-        //                Content = listPicker,
-        //                LeftButtonContent = "OK",
-        //                RightButtonContent = "Cancel",
-        //                IsFullScreen = false,
-        //            };
+            CustomMessageBox messageBox = new CustomMessageBox()
+            {
+                Title = "Login Required",
+                Message = "Choose which provider to use",
+                Content = listPicker,
+                LeftButtonContent = "OK",
+                RightButtonContent = "Cancel",
+                IsFullScreen = false,
+            };
 
-        //            //messageBox.Dismissing += (s1, e1) =>
-        //            //{
-        //            //    if (listPicker.ListPickerMode == ListPickerMode.Expanded)
-        //            //    {
-        //            //        e1.Cancel = true;
-        //            //    }
-        //            //};
+            //messageBox.Dismissing += (s1, e1) =>
+            //{
+            //    if (listPicker.ListPickerMode == ListPickerMode.Expanded)
+            //    {
+            //        e1.Cancel = true;
+            //    }
+            //};
 
-        //            messageBox.Dismissed += (s2, e2) =>
-        //            {
-        //                value = (e2.Result == CustomMessageBoxResult.LeftButton && listPicker.SelectedItem != null ? providers[(string)listPicker.SelectedItem] : null);
-        //            };
+            messageBox.Dismissed += (s2, e2) =>
+            {
+                value = (e2.Result == CustomMessageBoxResult.LeftButton && listPicker.SelectedItem != null ? providers[(string)listPicker.SelectedItem] : null);
+            };
 
-        //            messageBox.Unloaded += (s2, e2) => tcs.SetResult(value);
+            messageBox.Unloaded += (s2, e2) => tcs.SetResult(value);
+            messageBox.Show();
 
-        //#if NETFX_CORE
-        //            throw new Exception("zasgasg");
-        //#else
-        //            messageBox.Show();
-        //#endif
-        //            return tcs.Task;
-        //        }
+            return tcs.Task;
+        }
 
-        //        public static Task<AppUser> GetRegistration()
-        //        {
-        //            var tcs = new TaskCompletionSource<AppUser>();
-        //            AppUser value = null;
+        public static Task<AppUser> GetRegistration()
+        {
+            var tcs = new TaskCompletionSource<AppUser>();
+            AppUser value = null;
 
-        //            Grid g = new Grid() { Margin = new Thickness(12, 42, 24, 18) };
-        //            g.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
-        //            g.ColumnDefinitions.Add(new ColumnDefinition());
-        //            g.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
-        //            g.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+            Grid g = new Grid() { Margin = new Thickness(12, 42, 24, 18) };
+            g.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+            g.ColumnDefinitions.Add(new ColumnDefinition());
+            g.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+            g.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
 
-        //            TextBlock Name = new TextBlock() { Text = "Name", VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-        //            g.Children.Add(Name);
-        //            Grid.SetColumn(Name, 0);
-        //            Grid.SetRow(Name, 0);
+            TextBlock Name = new TextBlock() { Text = "Name", VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+            g.Children.Add(Name);
+            Grid.SetColumn(Name, 0);
+            Grid.SetRow(Name, 0);
 
 
-        //            TextBox UserName = new TextBox() { VerticalAlignment = VerticalAlignment.Center };
-        //            g.Children.Add(UserName);
-        //            Grid.SetColumn(UserName, 1);
-        //            Grid.SetRow(UserName, 0);
+            TextBox UserName = new TextBox() { VerticalAlignment = VerticalAlignment.Center };
+            g.Children.Add(UserName);
+            Grid.SetColumn(UserName, 1);
+            Grid.SetRow(UserName, 0);
 
-        //            TextBlock Email = new TextBlock() { Text = "Email", VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-        //            g.Children.Add(Email);
-        //            Grid.SetColumn(Email, 0);
-        //            Grid.SetRow(Email, 1);
+            TextBlock Email = new TextBlock() { Text = "Email", VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+            g.Children.Add(Email);
+            Grid.SetColumn(Email, 0);
+            Grid.SetRow(Email, 1);
 
-        //            TextBox UserEmail = new TextBox() { VerticalAlignment = VerticalAlignment.Center };
-        //            g.Children.Add(UserEmail);
-        //            Grid.SetColumn(UserEmail, 1);
-        //            Grid.SetRow(UserEmail, 1);
+            TextBox UserEmail = new TextBox() { VerticalAlignment = VerticalAlignment.Center };
+            g.Children.Add(UserEmail);
+            Grid.SetColumn(UserEmail, 1);
+            Grid.SetRow(UserEmail, 1);
 
-        //            CustomMessageBox messageBox = new CustomMessageBox()
-        //            {
-        //                Title = "Registration Required",
-        //                Message = "Complete all fields to create your account",
-        //                Content = g,
-        //                LeftButtonContent = "OK",
-        //                RightButtonContent = "Cancel",
-        //                IsFullScreen = false,
-        //            };
+            CustomMessageBox messageBox = new CustomMessageBox()
+            {
+                Title = "Registration Required",
+                Message = "Complete all fields to create your account",
+                Content = g,
+                LeftButtonContent = "OK",
+                RightButtonContent = "Cancel",
+                IsFullScreen = false,
+            };
 
-        //            messageBox.Dismissing += (s1, e1) =>
-        //            {
-        //                if (e1.Result == CustomMessageBoxResult.LeftButton &&
-        //                    (string.IsNullOrWhiteSpace(UserEmail.Text) || string.IsNullOrWhiteSpace(UserName.Text)))
-        //                {
-        //                    e1.Cancel = true;
-        //                }
-        //            };
+            messageBox.Dismissing += (s1, e1) =>
+            {
+                if (e1.Result == CustomMessageBoxResult.LeftButton &&
+                    (string.IsNullOrWhiteSpace(UserEmail.Text) || string.IsNullOrWhiteSpace(UserName.Text)))
+                {
+                    e1.Cancel = true;
+                }
+            };
 
-        //            messageBox.Dismissed += (s2, e2) =>
-        //            {
-        //                if (e2.Result == CustomMessageBoxResult.LeftButton)
-        //                {
-        //                    value = new AppUser() { Email = UserEmail.Text, Name = UserName.Text };
-        //                }
-        //            };
+            messageBox.Dismissed += (s2, e2) =>
+            {
+                if (e2.Result == CustomMessageBoxResult.LeftButton)
+                {
+                    value = new AppUser() { Email = UserEmail.Text, Name = UserName.Text };
+                }
+            };
 
-        //            messageBox.Unloaded += (s2, e2) => tcs.SetResult(value);
+            messageBox.Unloaded += (s2, e2) => tcs.SetResult(value);
+            messageBox.Show();
 
-        //#if NETFX_CORE
-        //            throw new Exception("zasgasg");
-        //#else
-        //            messageBox.Show();
-        //#endif
-
-        //            return tcs.Task;
-        //        }
+            return tcs.Task;
+        }
+#endif
 
     }
 }

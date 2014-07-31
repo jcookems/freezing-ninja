@@ -34,6 +34,7 @@ namespace Mapper
 
         public static List<PathInfo> ProcessPathData(string dv, double scale)
         {
+            if (dv == null) return null;
             var pp = new PathParser(dv, scale);
             return pp.pathData;
         }
@@ -199,7 +200,7 @@ namespace Mapper
             {
                 int start = curLoc;
                 int len = 0;
-                while (!atEnd() && (Char.IsDigit(curChar()) || curChar() == '.'))
+                while (!atEnd() && (Char.IsDigit(curChar()) || curChar() == '.' || curChar() == 'E' || curChar() == '+' || curChar() == '-'))
                 {
                     len++;
                     moveNext();

@@ -141,9 +141,7 @@ namespace LicenseChecker
                         WriteLine("    " + yy.name);
                     }
                 }
-
             }
-
 
             private void doitWorker(string targetPath, Func<string[], string, bool> validator, string description)
             {
@@ -183,8 +181,6 @@ namespace LicenseChecker
                 totalCounter++;
                 return;
             }
-
-
         }
 
         private static bool checkASCII(string[] lines, string fileName)

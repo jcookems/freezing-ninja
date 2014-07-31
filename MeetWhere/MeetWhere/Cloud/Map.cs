@@ -17,7 +17,7 @@ namespace MeetWhere.Cloud
         [DataMember(Name = "part")]
         public int Part { get; set; }
 
-        [DataMember(Name = "svg")]
-        public string SVG { get; set; }
+        [DataMember(Name = "description")]
+        public string Description { get; set; }
     }
 }

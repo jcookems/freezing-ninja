@@ -21,8 +21,8 @@ namespace Mapper
         public string Text { get; set; }
         public Boolean? IsHall { get; set; }
         public double? Scale { get; set; }
-
-        private string _path;
+        public double FontSize { get; set; }
+        public BoundingRectangle elementBounds { get; set; }
         public string Path
         {
             get
@@ -36,6 +36,7 @@ namespace Mapper
             }
         }
 
+        private string _path;
         private List<PathInfo> _cachedPath = null;
         private double PathScale;
 
@@ -47,10 +48,6 @@ namespace Mapper
             }
             return this._cachedPath;
         }
-
-        public double FontSize { get; set; }
-
-        public BoundingRectangle elementBounds { get; set; }
 
         public override string ToString()
         {
