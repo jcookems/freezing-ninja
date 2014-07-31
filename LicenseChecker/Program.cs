@@ -8,8 +8,8 @@ namespace LicenseChecker
     internal class Program
     {
         //        static string path = @"C:\Users\jcooke\Desktop\WindowsAzure-azure-sdk-for-java";
-        // static string path = @"C:\dd\git\jcooke\azure-sdk-for-ruby";
-        static string path = @"C:\dd\git\jcooke\socket.io-servicebus";
+         static string path = @"C:\dd\git\jcooke\azure-sdk-for-ruby";
+//        static string path = @"C:\dd\git\jcooke\socket.io-servicebus";
         //        static string path = @"C:\dd\git\jcooke\azure-sdk-for-java-pr";
         //        static string path = @"C:\users\jcooke\desktop\azure-sdk-for-java-pr-dev";
 
@@ -52,6 +52,7 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
         {
             RecursiveValidator.doit(path, CheckLicense, "license");
             RecursiveValidator.doit(path, checkASCII, "ASCII");
+            RecursiveValidator.doit(path, removeEOLWhitespace, "EOL Whitespace");
             Console.ReadLine();
         }
 
@@ -128,6 +129,14 @@ limitations under the License.".Split(new string[] { "\r\n" }, StringSplitOption
                 }
             }
             return nonAsciiLines.Length == 0;
+        }
+
+        private static bool removeEOLWhitespace(string[] lines, string fileName)
+        {
+            var newLines = lines.Select(p => p.TrimEnd()).ToList();
+            if (newLines.Last() != "") newLines.Add("");
+            File.WriteAllText(fileName, string.Join("\n", newLines));
+            return lines.Any(p => p.TrimEnd() != p);
         }
 
         private static bool CheckLicense(string[] lines, string fileName)
