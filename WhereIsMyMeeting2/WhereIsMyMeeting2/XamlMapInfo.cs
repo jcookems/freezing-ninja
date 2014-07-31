@@ -48,15 +48,15 @@ namespace WhereIsMyMeeting2
             this.buildingBounds = new BoundingRectangle();
 
             StreamResourceInfo xml = Application.GetResourceStream(new Uri(
-                "Maps/" + location.Building + "_" + location.Floor + ".svg", UriKind.Relative));
+                "Maps/" + location.Building + "-" + location.Floor + ".svg", UriKind.Relative));
             XElement doc = null;
             try
             {
                 doc = XDocument.Load(xml.Stream).Root;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                MessageBox.Show("Could not load the map for " +
+                throw new Exception("Could not load the map for " +
                     "building '" + location.Building + "', " +
                     "floor'" + location.Floor + "'");
             }

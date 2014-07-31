@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace WhereIsMyMeeting2
@@ -65,7 +62,5 @@ namespace WhereIsMyMeeting2
             if (minY == null || minY.Value > y) minY = y;
             if (maxY == null || maxY.Value < y) maxY = y;
         }
-
-
     }
 }

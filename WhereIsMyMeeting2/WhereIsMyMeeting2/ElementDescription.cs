@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Xml.Linq;
 
@@ -98,9 +96,14 @@ namespace WhereIsMyMeeting2
             // Fill out some defaults
             styleParts["stroke"] = "black";
             styleParts["font-size"] = "11";
-            foreach (var part in node2.Attribute("style").Value.Split(new char[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).Select(p => p.Split(':')))
+            styleParts["fill"] = "none";
+           
+            if (node2.Attribute("style") != null)
             {
-                styleParts[part[0]] = part[1];
+                foreach (var part in node2.Attribute("style").Value.Split(new char[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).Select(p => p.Split(':')))
+                {
+                    styleParts[part[0]] = part[1];
+                }
             }
 
             if (name == "circle")

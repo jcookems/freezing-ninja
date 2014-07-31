@@ -24,7 +24,12 @@ namespace WhereIsMyMeeting2
 
         public override string ToString()
         {
-            return "segment type: " + segmentType + ", point: " + point + ", size: " + size + ", angle: " + angle + "is large arc: " + isLargeArc + ", is sweepdir clockwise: " + isSweepDirectionClockwise;
+            return "segment type: " + segmentType + 
+                ", point: " + point + 
+                ", size: " + size + 
+                ", angle: " + angle +
+                ", is large arc: " + isLargeArc +
+                ", is sweepdir clockwise: " + isSweepDirectionClockwise;
         }
 
 
@@ -78,7 +83,7 @@ namespace WhereIsMyMeeting2
                                 eatWhitespace();
                                 pi.isLargeArc = getBoolean();
                                 eatWhitespace();
-                                eatOneComma();
+                                eatOneOptionalComma();
                                 eatWhitespace();
                                 pi.isSweepDirectionClockwise = getBoolean();
                                 eatWhitespace();
@@ -97,7 +102,7 @@ namespace WhereIsMyMeeting2
                 eatWhitespace();
                 double x = getDouble();
                 eatWhitespace();
-                eatOneComma();
+                eatOneOptionalComma();
                 eatWhitespace();
                 double y = getDouble();
                 return new Point(x, y);
@@ -115,7 +120,6 @@ namespace WhereIsMyMeeting2
 
             private Char curChar()
             {
-                //       Debug.WriteLine(curLoc + ": " + dataValue[curLoc]);
                 return dataValue[curLoc];
             }
 
@@ -137,15 +141,11 @@ namespace WhereIsMyMeeting2
                 }
             }
 
-            private void eatOneComma()
+            private void eatOneOptionalComma()
             {
                 if (!atEnd() && curChar() == ',')
                 {
                     moveNext();
-                }
-                else
-                {
-                    throw new InvalidOperationException("Expected comma was missing in path: '" + dataValue + "'");
                 }
             }
 
