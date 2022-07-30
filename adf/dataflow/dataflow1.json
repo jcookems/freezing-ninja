@@ -14,6 +14,10 @@
 			],
 			"sinks": [
 				{
+					"dataset": {
+						"referenceName": "Json1",
+						"type": "DatasetReference"
+					},
 					"name": "sink1"
 				}
 			],
@@ -198,6 +202,7 @@
 				"     stagingDatabaseName: 'apim') ~> source1",
 				"source1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
+				"     truncate: true,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> sink1"
 			]
