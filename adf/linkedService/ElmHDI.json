@@ -1,0 +1,25 @@
+{
+	"name": "ElmHDI",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "HDInsight",
+		"typeProperties": {
+			"clusterUri": "https://jrc2prefixelm.azurehdinsight.net",
+			"userName": "admin",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "jcooketest20220331",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "AppSetting-jrc2prefixelmOoziePassword"
+			},
+			"isEspEnabled": false,
+			"linkedServiceName": {
+				"referenceName": "jrc2prefixhdiaccount40",
+				"type": "LinkedServiceReference"
+			}
+		}
+	}
+}

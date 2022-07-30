@@ -1,0 +1,50 @@
+{
+	"name": "pipeline1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Hive1",
+				"type": "HDInsightHive",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"scriptPath": "sharedscripts/Oozie/Jobs/WAWSDS_LATEST/dev/current/secondary/daily/DailyRawTotals.hql",
+					"arguments": [
+						"--hivevar",
+						"DAILYHTTPAGGDB=Kusto",
+						"--hivevar",
+						"DATATIMESTAMP=2022-06-05",
+						"--hivevar",
+						"DATATIMEPATH=2022/06/05",
+						"--hivevar",
+						"DAYDROPTIMESTAMP=2001-01-01",
+						"--hivevar",
+						"BRANCH=dev",
+						"--hivevar",
+						"BUILD=current",
+						"--hivevar",
+						"SHAREDDATAROOT=wasbs://shareddata@jrc2prefixhdiaccount40.blob.core.windows.net"
+					],
+					"scriptLinkedService": {
+						"referenceName": "jrc2prefixhdiaccount40",
+						"type": "LinkedServiceReference"
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "ElmHDI",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2022-07-29T23:41:23Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

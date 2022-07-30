@@ -1,0 +1,17 @@
+{
+	"name": "DailyRawTotals",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "Elm",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "HiveObject",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dev_current",
+			"table": "dailyrawtotals"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

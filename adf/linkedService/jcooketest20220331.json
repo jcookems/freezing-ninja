@@ -1,0 +1,11 @@
+{
+	"name": "jcooketest20220331",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://jcooketest20220331.vault.azure.net/"
+		}
+	}
+}

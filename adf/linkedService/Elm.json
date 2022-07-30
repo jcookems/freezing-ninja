@@ -1,0 +1,31 @@
+{
+	"name": "Elm",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "Hive",
+		"typeProperties": {
+			"host": "jrc2prefixelm.azurehdinsight.net",
+			"port": 443,
+			"serverType": "HiveServer2",
+			"thriftTransportProtocol": "HTTP",
+			"authenticationType": "WindowsAzureHDInsightService",
+			"serviceDiscoveryMode": false,
+			"useNativeQuery": false,
+			"username": "admin",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "jcooketest20220331",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "AppSetting-jrc2prefixelmOoziePassword"
+			},
+			"enableSsl": false,
+			"storageReference": {
+				"referenceName": "jrc2prefixhdiaccount40",
+				"type": "LinkedServiceReference"
+			}
+		}
+	}
+}
