@@ -12,7 +12,11 @@
 					"name": "source1"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"name": "sink1"
+				}
+			],
 			"transformations": [],
 			"scriptLines": [
 				"source(output(",
@@ -191,7 +195,11 @@
 				"     staged: true,",
 				"     storageContainer: 'adftempcontainer',",
 				"     storageFolderPath: '',",
-				"     stagingDatabaseName: 'apim') ~> source1"
+				"     stagingDatabaseName: 'apim') ~> source1",
+				"source1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1"
 			]
 		}
 	}
