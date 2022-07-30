@@ -1,0 +1,77 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "jcookeADF"
+		},
+		"jrc2prefixhdiaccount40_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'jrc2prefixhdiaccount40'"
+		},
+		"Elm_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "jrc2prefixelm.azurehdinsight.net"
+		},
+		"Elm_properties_typeProperties_username": {
+			"type": "string",
+			"defaultValue": "admin"
+		},
+		"ElmHDI_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "admin"
+		},
+		"jcooketest20220331_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://jcooketest20220331.vault.azure.net/"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "jcookeADF_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"jrc2prefixhdiaccount40_connectionString": {
+						"value": "[parameters('jrc2prefixhdiaccount40_connectionString')]"
+					},
+					"jcooketest20220331_properties_typeProperties_baseUrl": {
+						"value": "[parameters('jcooketest20220331_properties_typeProperties_baseUrl')]"
+					},
+					"Elm_properties_typeProperties_host": {
+						"value": "[parameters('Elm_properties_typeProperties_host')]"
+					},
+					"Elm_properties_typeProperties_username": {
+						"value": "[parameters('Elm_properties_typeProperties_username')]"
+					},
+					"ElmHDI_properties_typeProperties_userName": {
+						"value": "[parameters('ElmHDI_properties_typeProperties_userName')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}

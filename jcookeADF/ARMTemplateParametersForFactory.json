@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "jcookeADF"
+		},
+		"jrc2prefixhdiaccount40_connectionString": {
+			"value": ""
+		},
+		"Elm_properties_typeProperties_host": {
+			"value": "jrc2prefixelm.azurehdinsight.net"
+		},
+		"Elm_properties_typeProperties_username": {
+			"value": "admin"
+		},
+		"ElmHDI_properties_typeProperties_userName": {
+			"value": "admin"
+		},
+		"jcooketest20220331_properties_typeProperties_baseUrl": {
+			"value": "https://jcooketest20220331.vault.azure.net/"
+		}
+	}
+}

@@ -1,0 +1,646 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "jcookeADF"
+		},
+		"jrc2prefixhdiaccount40_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'jrc2prefixhdiaccount40'"
+		},
+		"Elm_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "jrc2prefixelm.azurehdinsight.net"
+		},
+		"Elm_properties_typeProperties_username": {
+			"type": "string",
+			"defaultValue": "admin"
+		},
+		"ElmHDI_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "admin"
+		},
+		"jcooketest20220331_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://jcooketest20220331.vault.azure.net/"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/CopyPipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyBlobToBlob",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DelimitedText1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "TestDelimitedText1",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-29T22:33:50Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DelimitedText1')]",
+				"[concat(variables('factoryId'), '/datasets/TestDelimitedText1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Hive1",
+						"type": "HDInsightHive",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"scriptPath": "sharedscripts/Oozie/Jobs/WAWSDS_LATEST/dev/current/secondary/daily/DailyRawTotals.hql",
+							"arguments": [
+								"--hivevar",
+								"DAILYHTTPAGGDB=Kusto",
+								"--hivevar",
+								"DATATIMESTAMP=2022-06-05",
+								"--hivevar",
+								"DATATIMEPATH=2022/06/05",
+								"--hivevar",
+								"DAYDROPTIMESTAMP=2001-01-01",
+								"--hivevar",
+								"BRANCH=dev",
+								"--hivevar",
+								"BUILD=current",
+								"--hivevar",
+								"SHAREDDATAROOT=wasbs://shareddata@jrc2prefixhdiaccount40.blob.core.windows.net"
+							],
+							"scriptLinkedService": {
+								"referenceName": "jrc2prefixhdiaccount40",
+								"type": "LinkedServiceReference"
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ElmHDI",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-07-29T23:41:23Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/jrc2prefixhdiaccount40')]",
+				"[concat(variables('factoryId'), '/linkedServices/ElmHDI')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DailyRawTotals')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "Elm",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "HiveObject",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dev_current",
+					"table": "dailyrawtotals"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Elm')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "jrc2prefixhdiaccount40",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Mapping.tsv",
+						"folderPath": "Oozie/Jobs/WAWSDS_LATEST/dev/current/primary/daily/HostnameToService",
+						"container": "sharedscripts"
+					},
+					"columnDelimiter": "\t",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/jrc2prefixhdiaccount40')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TestDelimitedText1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "jrc2prefixhdiaccount40",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "test.tsv",
+						"folderPath": "MdsSnap",
+						"container": "shareddata"
+					},
+					"columnDelimiter": "\t",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/jrc2prefixhdiaccount40')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Elm')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "Hive",
+				"typeProperties": {
+					"host": "[parameters('Elm_properties_typeProperties_host')]",
+					"port": 443,
+					"serverType": "HiveServer2",
+					"thriftTransportProtocol": "HTTP",
+					"authenticationType": "WindowsAzureHDInsightService",
+					"serviceDiscoveryMode": false,
+					"useNativeQuery": false,
+					"username": "[parameters('Elm_properties_typeProperties_username')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "jcooketest20220331",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "AppSetting-jrc2prefixelmOoziePassword"
+					},
+					"enableSsl": false,
+					"storageReference": {
+						"referenceName": "jrc2prefixhdiaccount40",
+						"type": "LinkedServiceReference"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/jrc2prefixhdiaccount40')]",
+				"[concat(variables('factoryId'), '/linkedServices/jcooketest20220331')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ElmHDI')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "HDInsight",
+				"typeProperties": {
+					"clusterUri": "https://jrc2prefixelm.azurehdinsight.net",
+					"userName": "[parameters('ElmHDI_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "jcooketest20220331",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "AppSetting-jrc2prefixelmOoziePassword"
+					},
+					"isEspEnabled": false,
+					"linkedServiceName": {
+						"referenceName": "jrc2prefixhdiaccount40",
+						"type": "LinkedServiceReference"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/jrc2prefixhdiaccount40')]",
+				"[concat(variables('factoryId'), '/linkedServices/jcooketest20220331')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/jcooketest20220331')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('jcooketest20220331_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/jrc2prefixhdiaccount40')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('jrc2prefixhdiaccount40_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/dataflow1')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"linkedService": {
+								"referenceName": "Elm",
+								"type": "LinkedServiceReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Json1",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"source(output(",
+						"          servicename as string,",
+						"          siteid as string,",
+						"          sitename as string,",
+						"          sitestack as string,",
+						"          sitestackpct as float,",
+						"          numhits200s as long,",
+						"          numhits300s as long,",
+						"          numhits400s as long,",
+						"          numhits500s as long,",
+						"          sitesku as string,",
+						"          sitestamp as string,",
+						"          siteregion as string,",
+						"          sitewhptype as string,",
+						"          sitewhpid as string,",
+						"          numsitewhpinstances as integer,",
+						"          sitesubscription as string,",
+						"          numbackups as long,",
+						"          numdebugsessions as long,",
+						"          sitecreationdate as timestamp,",
+						"          suspended as integer,",
+						"          sitecreationsource as string,",
+						"          numdeployments as long,",
+						"          deploymentsource as string,",
+						"          sitesharedhours as float,",
+						"          sitesmallstandardhours as float,",
+						"          sitemediumstandardhours as float,",
+						"          sitelargestandardhours as float,",
+						"          sitesmallbasichours as float,",
+						"          sitemediumbasichours as float,",
+						"          sitelargebasichours as float,",
+						"          numipssl as integer,",
+						"          numsnissl as integer,",
+						"          numslots as integer,",
+						"          numslotswaps as integer,",
+						"          hasbackuprestore as integer,",
+						"          aibillingtype as string,",
+						"          aibillingtypedate as timestamp,",
+						"          subscriptionunitsmeteredall as float,",
+						"          subscriptionunitsmeteredpaid as float,",
+						"          subscriptionunitsmeteredfree as float,",
+						"          subscriptionunitsmeteredshared as float,",
+						"          subscriptionunitsmeteredbasic as float,",
+						"          subscriptionunitsmeteredstandard as float,",
+						"          galleryapp as string,",
+						"          numhybridconnections as integer,",
+						"          sumsiteextensions as integer,",
+						"          numsiteextensionsibiza as integer,",
+						"          sitedatabase as string,",
+						"          autoscaling as integer,",
+						"          numwebjobcontinuousexecutions as integer,",
+						"          numwebjobcontinuoussdkexecutions as integer,",
+						"          numwebjobtriggeredexecutions as integer,",
+						"          numwebjobtriggeredsdkexecutions as integer,",
+						"          numwebjobcontinuousjobs as integer,",
+						"          numwebjobcontinuoussdkjobs as integer,",
+						"          numwebjobtriggeredjobs as integer,",
+						"          numwebjobtriggeredsdkjobs as integer,",
+						"          scmtype as string,",
+						"          hassiteauth as integer,",
+						"          numtiprules as integer,",
+						"          numvnets as integer,",
+						"          aioffertype as string,",
+						"          haswebsockets as integer,",
+						"          numwatmdomains as integer,",
+						"          numcustomdomains as integer,",
+						"          resourcegroup as string,",
+						"          appkind as string,",
+						"          apppackage as string,",
+						"          sitefreehours as float,",
+						"          websystemtype as string,",
+						"          sitesmallpremiumhours as float,",
+						"          sitemediumpremiumhours as float,",
+						"          sitelargepremiumhours as float,",
+						"          subscriptionunitsmeteredpremium as float,",
+						"          customerfailures as long,",
+						"          platformfailures as long,",
+						"          unknownfailures as long,",
+						"          sitelatestslotcreationdate as timestamp,",
+						"          sitelatestslotcreationsource as string,",
+						"          deploymentclient as string,",
+						"          numprofilingsessions as integer,",
+						"          zray_sku as string,",
+						"          tinfoil_sku as string,",
+						"          zumoversion as string,",
+						"          vsprojectid as string,",
+						"          islinux as integer,",
+						"          localmysql as integer,",
+						"          stackdetail as string,",
+						"          corssettings as string,",
+						"          hasapidefinitionurl as integer,",
+						"          subscriptionunitsmeteredfunctionsrequests as float,",
+						"          subscriptionunitsmeteredfunctionscompute as float,",
+						"          hasalwayson as integer,",
+						"          sitesmallisolatedhours as float,",
+						"          sitemediumisolatedhours as float,",
+						"          sitelargeisolatedhours as float,",
+						"          subscriptionunitsmeteredisolated as float,",
+						"          sitesmallpremiumv2hours as float,",
+						"          sitemediumpremiumv2hours as float,",
+						"          sitelargepremiumv2hours as float,",
+						"          subscriptionunitsmeteredpremiumv2 as float,",
+						"          localcacheenabled as integer,",
+						"          dynamiccacheenabled as integer,",
+						"          numnewhybridconnections as integer,",
+						"          hasmsi as integer,",
+						"          msitokenrequests as integer,",
+						"          hasfeipfiltering as integer,",
+						"          httpsonly as integer,",
+						"          http20enabled as integer,",
+						"          mintlsversion as string,",
+						"          isxenon as integer,",
+						"          isspot as integer,",
+						"          sitesmallbasiclinuxhours as float,",
+						"          sitemediumbasiclinuxhours as float,",
+						"          sitelargebasiclinuxhours as float,",
+						"          sitesmallstandardlinuxhours as float,",
+						"          sitemediumstandardlinuxhours as float,",
+						"          sitelargestandardlinuxhours as float,",
+						"          sitesmallpremiumv2linuxhours as float,",
+						"          sitemediumpremiumv2linuxhours as float,",
+						"          sitelargepremiumv2linuxhours as float,",
+						"          sitesmallpremiumcontainerhours as float,",
+						"          sitemediumpremiumcontainerhours as float,",
+						"          sitelargepremiumcontainerhours as float,",
+						"          sitesmallisolatedlinuxhours as float,",
+						"          sitemediumisolatedlinuxhours as float,",
+						"          sitelargeisolatedlinuxhours as float,",
+						"          sitepremiumfunctionhours as float,",
+						"          managedjavaversion as string,",
+						"          hasswiftvnet as integer,",
+						"          lastdeploymentdate as timestamp,",
+						"          sitefreelinuxhours as float,",
+						"          haskeyvaultreferences as integer,",
+						"          serverfarmname as string,",
+						"          elasticprewarmedworkers as integer,",
+						"          elasticminworkers as integer,",
+						"          elasticmaxworkers as integer,",
+						"          antversion as string,",
+						"          sitelargeisolatedi12hours as float,",
+						"          sitelargeisolatedi13hours as float,",
+						"          sitelargeisolatedi14hours as float,",
+						"          sitelargeisolatedi12linuxhours as float,",
+						"          sitelargeisolatedi13linuxhours as float,",
+						"          sitelargeisolatedi14linuxhours as float,",
+						"          sitesmallpremiumv3hours as float,",
+						"          sitemediumpremiumv3hours as float,",
+						"          sitelargepremiumv3hours as float,",
+						"          sitesmallpremiumv3linuxhours as float,",
+						"          sitemediumpremiumv3linuxhours as float,",
+						"          sitelargepremiumv3linuxhours as float,",
+						"          sitesmallisolatedv2hours as float,",
+						"          sitemediumisolatedv2hours as float,",
+						"          sitelargeisolatedv2hours as float,",
+						"          sitesmallisolatedv2linuxhours as float,",
+						"          sitemediumisolatedv2linuxhours as float,",
+						"          sitelargeisolatedv2linuxhours as float,",
+						"          numorganichits200s as long,",
+						"          numorganichits300s as long,",
+						"          numorganichits400s as long,",
+						"          numorganichits500s as long,",
+						"          absoluteacores as float,",
+						"          absolutedcores as float,",
+						"          linuxruntimestack as string,",
+						"          numprivateendpoints as integer,",
+						"          pdate as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     limit: 100,",
+						"     format: 'query',",
+						"     store: 'hive',",
+						"     query: (\"SELECT * FROM dev_current.DailyEntity LIMIT 10\"),",
+						"     staged: true,",
+						"     storageContainer: 'adftempcontainer',",
+						"     storageFolderPath: '',",
+						"     stagingDatabaseName: 'apim') ~> source1",
+						"source1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     truncate: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Elm')]",
+				"[concat(variables('factoryId'), '/datasets/Json1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Json1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "jrc2prefixhdiaccount40",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "out.json",
+						"folderPath": "jcooketest",
+						"container": "shareddata"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/jrc2prefixhdiaccount40')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline2')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow1",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/dataflow1')]"
+			]
+		}
+	]
+}
