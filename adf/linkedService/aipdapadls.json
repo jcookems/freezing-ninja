@@ -1,0 +1,23 @@
+{
+	"name": "aipdapadls",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDataLakeStore",
+		"typeProperties": {
+			"dataLakeStoreUri": "adl://aipdapadls.azuredatalakestore.net",
+			"azureCloudType": "AzurePublic",
+			"servicePrincipalId": "46fc073d-3c66-4f3d-a90a-e9c14cde80be",
+			"servicePrincipalKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "jcooketest20220331",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "AppSetting-WawsAnSvcInfluencerDataSecret"
+			},
+			"tenant": "975f013f-7f24-47e8-a7d3-abc4752bf346",
+			"subscriptionId": "",
+			"resourceGroupName": ""
+		}
+	}
+}
