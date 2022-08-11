@@ -1,0 +1,19 @@
+{
+	"name": "Json2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "aipdapadls",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureDataLakeStoreLocation",
+				"fileName": "jcookeTest.json",
+				"folderPath": "ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
+			}
+		},
+		"schema": {}
+	}
+}
