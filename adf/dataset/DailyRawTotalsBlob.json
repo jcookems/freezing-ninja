@@ -1,0 +1,33 @@
+{
+	"name": "DailyRawTotalsBlob",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "jrc2prefixhdiaccount40",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"datePath": {
+				"type": "String",
+				"defaultValue": "2022/08/07"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "000000_0",
+				"folderPath": {
+					"value": "databuild/dev/current/daily/DailyRawTotals/@{dataset().datePath}",
+					"type": "Expression"
+				},
+				"container": "anonymizedlogs-archive"
+			},
+			"columnDelimiter": "\t",
+			"escapeChar": "\\",
+			"nullValue": "\\N",
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
