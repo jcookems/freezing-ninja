@@ -5,13 +5,21 @@
 			"referenceName": "aipdapadls",
 			"type": "LinkedServiceReference"
 		},
+		"parameters": {
+			"param1": {
+				"type": "string"
+			}
+		},
 		"annotations": [],
 		"type": "Json",
 		"typeProperties": {
 			"location": {
 				"type": "AzureDataLakeStoreLocation",
 				"fileName": "jcookeTest.json",
-				"folderPath": "ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
+				"folderPath": {
+					"value": "@dataset().param1",
+					"type": "Expression"
+				}
 			}
 		},
 		"schema": {}
