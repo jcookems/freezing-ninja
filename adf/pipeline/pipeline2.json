@@ -27,6 +27,12 @@
 				}
 			}
 		],
+		"parameters": {
+			"datePath": {
+				"type": "string",
+				"defaultValue": "2022/06/02"
+			}
+		},
 		"annotations": []
 	}
 }

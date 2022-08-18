@@ -6,13 +6,6 @@
 			"sources": [
 				{
 					"dataset": {
-						"referenceName": "DelimitedText1",
-						"type": "DatasetReference"
-					},
-					"name": "source2"
-				},
-				{
-					"dataset": {
 						"referenceName": "DailyRawTotalsBlob",
 						"type": "DatasetReference"
 					},
@@ -25,35 +18,27 @@
 						"referenceName": "ADL",
 						"type": "DatasetReference"
 					},
-					"name": "sink2"
+					"name": "sink3"
 				}
 			],
 			"transformations": [],
 			"scriptLines": [
 				"source(output(",
-				"          Column_1 as string,",
-				"          Column_2 as string,",
-				"          Column_3 as string",
-				"     ),",
-				"     allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     ignoreNoFilesFound: false) ~> source2",
-				"source(output(",
-				"          Column_1 as string,",
-				"          Column_2 as string,",
-				"          Column_3 as string,",
-				"          Column_4 as string,",
-				"          Column_5 as string,",
-				"          Column_6 as string",
+				"          NumHits as long,",
+				"          AbsoluteACores as double,",
+				"          AbsoluteDCores as double,",
+				"          AbsoluteACoresLinux as double,",
+				"          AbsoluteDCoresLinux as double,",
+				"          TotalCores as double",
 				"     ),",
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> DailyRawTotalsBlob",
-				"source2 sink(allowSchemaDrift: true,",
+				"DailyRawTotalsBlob sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     umask: 0022,",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> sink2"
+				"     skipDuplicateMapOutputs: true) ~> sink3"
 			]
 		}
 	}
