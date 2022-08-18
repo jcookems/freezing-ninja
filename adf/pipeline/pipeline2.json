@@ -27,16 +27,6 @@
 						"datasetParameters": {
 							"DailyRawTotalsBlob": {
 								"datePath": "2022/06/01"
-							},
-							"sink3": {
-								"param1": "/ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
-							}
-						},
-						"linkedServiceParameters": {
-							"sink3": {
-								"schemaLinkedService": {
-									"param1": "/ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
-								}
 							}
 						}
 					},

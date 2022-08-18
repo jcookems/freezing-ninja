@@ -6,10 +6,6 @@
 			"type": "LinkedServiceReference"
 		},
 		"parameters": {
-			"param1": {
-				"type": "string",
-				"defaultValue": "/ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
-			},
 			"shortDatePath": {
 				"type": "string",
 				"defaultValue": "20220604"
