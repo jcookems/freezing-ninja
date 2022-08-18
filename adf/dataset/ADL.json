@@ -9,6 +9,10 @@
 			"param1": {
 				"type": "string",
 				"defaultValue": "/ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
+			},
+			"shortDatePath": {
+				"type": "string",
+				"defaultValue": "20220604"
 			}
 		},
 		"annotations": [],
@@ -18,7 +22,7 @@
 				"type": "AzureDataLakeStoreLocation",
 				"fileName": "jcookeTest.json",
 				"folderPath": {
-					"value": "@dataset().param1",
+					"value": "@/ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/dataset().shortDatePath",
 					"type": "Expression"
 				}
 			}
