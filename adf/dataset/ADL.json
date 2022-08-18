@@ -7,7 +7,8 @@
 		},
 		"parameters": {
 			"param1": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "/ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
 			}
 		},
 		"annotations": [],
