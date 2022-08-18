@@ -8,7 +8,7 @@
 		"parameters": {
 			"datePath": {
 				"type": "String",
-				"defaultValue": "2022/08/07"
+				"defaultValue": "2022/06/01"
 			}
 		},
 		"annotations": [],
