@@ -45,6 +45,10 @@
 			"datePath": {
 				"type": "string",
 				"defaultValue": "2022/06/02"
+			},
+			"shortDatePath": {
+				"type": "string",
+				"defaultValue": "20220602"
 			}
 		},
 		"annotations": []
