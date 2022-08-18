@@ -17,7 +17,21 @@
 				"typeProperties": {
 					"dataflow": {
 						"referenceName": "dataflow1",
-						"type": "DataFlowReference"
+						"type": "DataFlowReference",
+						"parameters": {
+							"theDate": {
+								"value": "'@{pipeline().parameters.datePath}'",
+								"type": "Expression"
+							}
+						},
+						"datasetParameters": {
+							"DailyRawTotalsBlob": {
+								"datePath": "2022/06/01"
+							},
+							"sink3": {
+								"param1": "/ServiceInfluencers_InputStreams/Java-PartialAttribution/Public/20220811"
+							}
+						}
 					},
 					"compute": {
 						"coreCount": 8,

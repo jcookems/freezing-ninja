@@ -23,6 +23,9 @@
 			],
 			"transformations": [],
 			"scriptLines": [
+				"parameters{",
+				"     theDate as string (\"2022-06-03\")",
+				"}",
 				"source(output(",
 				"          NumHits as long,",
 				"          AbsoluteACores as double,",
