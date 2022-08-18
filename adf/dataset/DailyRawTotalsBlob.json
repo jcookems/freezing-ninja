@@ -21,13 +21,32 @@
 					"value": "databuild/dev/current/daily/DailyRawTotals/@{dataset().datePath}",
 					"type": "Expression"
 				},
-				"container": "anonymizedlogs-archive"
+				"container": "shareddata"
 			},
 			"columnDelimiter": "\t",
 			"escapeChar": "\\",
 			"nullValue": "\\N",
 			"quoteChar": "\""
 		},
-		"schema": []
+		"schema": [
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			}
+		]
 	}
 }
